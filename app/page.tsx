@@ -263,7 +263,6 @@ export default function SeldolMarketplace() {
   useEffect(() => {
     if (!chatProduct || !user) return;
 
-    // Load initial messages between participants for this product
     supabase
       .from("messages")
       .select("*")
@@ -273,7 +272,6 @@ export default function SeldolMarketplace() {
         if (data) setMessages(data as ChatMessage[]);
       });
 
-    // Realtime channel listener
     const channel = supabase
       .channel(`chat_${chatProduct.id}`)
       .on(
@@ -369,22 +367,31 @@ export default function SeldolMarketplace() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Fixed Stable Multiple Images Selector with Base64 Previews
   const handleMultipleImages = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    if (uploadFiles.length + files.length > 5) {
+    const availableSlots = 5 - uploadFiles.length;
+    if (availableSlots <= 0) {
       setNotice("Maximum 5 photos allowed!");
       return;
     }
 
-    const newFiles = Array.from(files);
-    setUploadFiles((prev) => [...prev, ...newFiles]);
+    const filesToAdd = Array.from(files).slice(0, availableSlots);
+    setUploadFiles((prev) => [...prev, ...filesToAdd]);
 
-    newFiles.forEach((file) => {
-      const url = URL.createObjectURL(file);
-      setPreviewImages((prev) => [...prev, url]);
+    filesToAdd.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result && typeof e.target.result === "string") {
+          setPreviewImages((prev) => [...prev, e.target!.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
     });
+
+    event.target.value = "";
   };
 
   const removeUploadImage = (index: number) => {
@@ -392,7 +399,7 @@ export default function SeldolMarketplace() {
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Real Upload & Post Ad Function
+  // Fixed Ad Publisher: Uploads to Storage, Saves DB record
   const handleSell = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -417,31 +424,32 @@ export default function SeldolMarketplace() {
     try {
       const uploadedImageUrls: string[] = [];
 
-      // 1. Upload files to Supabase Storage bucket 'product-images'
-      for (const file of uploadFiles) {
-        const fileExt = file.name.split(".").pop();
-        const cleanName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      for (let i = 0; i < uploadFiles.length; i++) {
+        const file = uploadFiles[i];
+        const fileExt = file.name.split(".").pop() || "jpg";
+        const cleanName = `${user.id}/${Date.now()}_img_${i}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from("product-images")
-          .upload(cleanName, file, { cacheControl: "3600", upsert: false });
+          .upload(cleanName, file, { cacheControl: "3600", upsert: true });
 
-        if (uploadError) {
-          console.error("Storage upload error:", uploadError);
-        } else {
+        if (!uploadError) {
           const { data } = supabase.storage.from("product-images").getPublicUrl(cleanName);
           uploadedImageUrls.push(data.publicUrl);
+        } else {
+          console.error("Storage upload warning:", uploadError);
         }
       }
 
       const finalImages =
         uploadedImageUrls.length > 0
           ? uploadedImageUrls
+          : previewImages.length > 0
+          ? previewImages
           : [
               "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=900&q=85",
             ];
 
-      // 2. Insert into Supabase 'products' table
       const { data: newRecord, error: insertError } = await supabase
         .from("products")
         .insert({
@@ -479,7 +487,6 @@ export default function SeldolMarketplace() {
 
       setProducts((prev) => [createdProduct, ...prev]);
 
-      // Reset form
       setNewTitle("");
       setNewPrice("");
       setNewLocation("");
@@ -527,7 +534,6 @@ export default function SeldolMarketplace() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Real Send Message Function
   const sendChat = async (e: FormEvent) => {
     e.preventDefault();
     if (!chatText.trim() || !chatProduct || !user || sendingMsg) return;
@@ -813,7 +819,11 @@ export default function SeldolMarketplace() {
                   return (
                     <button
                       key={cat.name}
-                      onClick={() => setCategory(cat.name)}
+                      onClick={() => {
+                        setCategory(cat.name);
+                        const el = document.getElementById("browse-section");
+                        el?.scrollIntoView({ behavior: "smooth" });
+                      }}
                       className={`flex shrink-0 items-center gap-2.5 rounded-2xl border px-4 py-2.5 text-xs font-bold transition ${
                         isSelected
                           ? "border-violet-600 bg-violet-600 text-white shadow-md shadow-violet-600/25"
@@ -1236,7 +1246,10 @@ export default function SeldolMarketplace() {
                     </label>
                     <div className="mt-2 grid grid-cols-3 gap-3 sm:grid-cols-5">
                       {previewImages.map((img, i) => (
-                        <div key={i} className="group relative aspect-square rounded-2xl border border-slate-200 overflow-hidden bg-slate-50">
+                        <div
+                          key={`preview-${i}`}
+                          className="group relative aspect-square rounded-2xl border border-slate-200 overflow-hidden bg-slate-50"
+                        >
                           <img src={img} alt="" className="h-full w-full object-cover" />
                           <button
                             type="button"
@@ -1533,24 +1546,28 @@ export default function SeldolMarketplace() {
                   </h3>
                 </div>
                 <div className="divide-y divide-slate-100">
-                  {products.slice(0, 5).map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => setChatProduct(p)}
-                      className={`flex w-full items-center gap-3 p-3.5 text-left transition ${
-                        chatProduct?.id === p.id ? "bg-violet-100/60" : "hover:bg-slate-100"
-                      }`}
-                    >
-                      <img src={p.images[0]} alt="" className="h-10 w-10 rounded-xl object-cover" />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className="truncate text-xs font-bold text-slate-900">{p.seller}</p>
-                          <span className="text-[10px] text-emerald-600 font-bold">Online</span>
+                  {products.length === 0 ? (
+                    <p className="p-4 text-xs text-slate-400">No active products found.</p>
+                  ) : (
+                    products.slice(0, 8).map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setChatProduct(p)}
+                        className={`flex w-full items-center gap-3 p-3.5 text-left transition ${
+                          chatProduct?.id === p.id ? "bg-violet-100/60" : "hover:bg-slate-100"
+                        }`}
+                      >
+                        <img src={p.images[0]} alt="" className="h-10 w-10 rounded-xl object-cover bg-slate-100" />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="truncate text-xs font-bold text-slate-900">{p.seller}</p>
+                            <span className="text-[10px] text-emerald-600 font-bold">Online</span>
+                          </div>
+                          <p className="truncate text-[11px] text-slate-500">{p.title}</p>
                         </div>
-                        <p className="truncate text-[11px] text-slate-500">{p.title}</p>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -1697,6 +1714,66 @@ export default function SeldolMarketplace() {
         )}
       </main>
 
+      {/* Floating Bottom Navigation Bar for Mobile */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-slate-200 bg-white/95 py-2 backdrop-blur-lg md:hidden">
+        {[
+          { label: "Home", p: "home" as PageName, icon: LayoutGrid },
+          { label: "Wishlist", p: "wishlist" as PageName, icon: Heart, count: favorites.length },
+          { label: "Sell", p: "sell" as PageName, icon: Plus, isAction: true },
+          { label: "Chats", p: "messages" as PageName, icon: MessageCircle },
+          { label: "Profile", p: user ? ("profile" as PageName) : null, href: user ? null : "/login/", icon: UserRound },
+        ].map((item) => {
+          const Icon = item.icon;
+          const isActive = item.p ? page === item.p : false;
+
+          if (item.isAction) {
+            return (
+              <button
+                key={item.label}
+                onClick={() => showPage(item.p!)}
+                className="flex flex-col items-center justify-center text-[10px] font-bold text-white"
+              >
+                <div className="flex h-10 w-10 -translate-y-2 items-center justify-center rounded-full bg-violet-600 shadow-lg shadow-violet-600/30">
+                  <Icon size={20} strokeWidth={3} />
+                </div>
+                <span className="-translate-y-1 text-slate-800">{item.label}</span>
+              </button>
+            );
+          }
+
+          if (item.href) {
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="flex flex-col items-center justify-center text-[10px] font-bold text-slate-400"
+              >
+                <Icon size={20} />
+                <span className="mt-1">{item.label}</span>
+              </Link>
+            );
+          }
+
+          return (
+            <button
+              key={item.label}
+              onClick={() => showPage(item.p!)}
+              className={`relative flex flex-col items-center justify-center text-[10px] font-bold transition ${
+                isActive ? "text-violet-600" : "text-slate-400"
+              }`}
+            >
+              <Icon size={20} />
+              <span className="mt-1">{item.label}</span>
+              {Boolean(item.count) && (
+                <span className="absolute -top-1 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white">
+                  {item.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+
       {/* Floating Global Toast */}
       {notice && (
         <div className="fixed bottom-20 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-xs font-bold text-white shadow-2xl md:bottom-6">
@@ -1704,6 +1781,9 @@ export default function SeldolMarketplace() {
           <span>{notice}</span>
         </div>
       )}
+
+      {/* Mobile Spacer for Fixed Bottom Nav */}
+      <div className="h-16 md:hidden" />
     </div>
   );
 }
