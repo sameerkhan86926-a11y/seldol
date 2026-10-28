@@ -47,6 +47,8 @@ import {
   LogOut,
   LogIn,
   Loader2,
+  ShieldAlert,
+  SlidersHorizontal,
 } from "lucide-react";
 
 type PageName =
@@ -75,6 +77,7 @@ type Product = {
   sellerRating?: number;
   phone: string;
   isFeatured?: boolean;
+  status?: string;
   createdAt: number;
 };
 
@@ -147,9 +150,10 @@ export default function SeldolMarketplace() {
   const [maxPrice, setMaxPrice] = useState("All");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  // Nav & Toast
+  // Nav, Notice & Broadcast
   const [mobileMenu, setMobileMenu] = useState(false);
   const [notice, setNotice] = useState("");
+  const [liveBanner, setLiveBanner] = useState<string>("");
 
   // Sell Form State
   const [newTitle, setNewTitle] = useState("");
@@ -168,6 +172,8 @@ export default function SeldolMarketplace() {
   const [user, setUser] = useState<any>(null);
   const [profileName, setProfileName] = useState("Guest");
   const [profilePhone, setProfilePhone] = useState("");
+  const [isAdminUser, setIsAdminUser] = useState(false);
+  const [isBannedUser, setIsBannedUser] = useState(false);
 
   // 1-on-1 Dedicated Chat State
   const [activeChat, setActiveChat] = useState<{
@@ -194,8 +200,7 @@ export default function SeldolMarketplace() {
       if (active && data?.session?.user) {
         const u = data.session.user;
         setUser(u);
-        setProfileName(u.user_metadata?.full_name || u.email?.split("@")[0] || "SELDOL Member");
-        setProfilePhone(u.user_metadata?.phone || "");
+        await verifyUserProfile(u);
         fetchWishlist(u.id);
         fetchUserChatThreads(u.id);
       }
@@ -203,6 +208,7 @@ export default function SeldolMarketplace() {
 
     void initUser();
     void fetchLiveProducts();
+    void fetchLiveBroadcast();
 
     const {
       data: { subscription },
@@ -211,8 +217,7 @@ export default function SeldolMarketplace() {
       if (session?.user) {
         const u = session.user;
         setUser(u);
-        setProfileName(u.user_metadata?.full_name || u.email?.split("@")[0] || "SELDOL Member");
-        setProfilePhone(u.user_metadata?.phone || "");
+        void verifyUserProfile(u);
         fetchWishlist(u.id);
         fetchUserChatThreads(u.id);
       } else {
@@ -220,6 +225,8 @@ export default function SeldolMarketplace() {
         setFavorites([]);
         setChatThreads([]);
         setActiveChat(null);
+        setIsAdminUser(false);
+        setIsBannedUser(false);
       }
     });
 
@@ -229,13 +236,55 @@ export default function SeldolMarketplace() {
     };
   }, []);
 
-  // 2. Fetch Real Listings from Supabase
+  // Check Profile Roles (Admin and Ban check)
+  async function verifyUserProfile(u: any) {
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, phone, is_admin, is_banned")
+        .eq("id", u.id)
+        .single();
+
+      if (data) {
+        setProfileName(data.full_name || u.email?.split("@")[0] || "SELDOL Member");
+        setProfilePhone(data.phone || "");
+        setIsAdminUser(Boolean(data.is_admin));
+        setIsBannedUser(Boolean(data.is_banned));
+      } else {
+        setProfileName(u.user_metadata?.full_name || u.email?.split("@")[0] || "SELDOL Member");
+        setProfilePhone(u.user_metadata?.phone || "");
+      }
+    } catch {
+      setProfileName(u.user_metadata?.full_name || u.email?.split("@")[0] || "SELDOL Member");
+    }
+  }
+
+  // Fetch Live Broadcast from Admin
+  async function fetchLiveBroadcast() {
+    try {
+      const { data } = await supabase
+        .from("broadcasts")
+        .select("message")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (data && data.length > 0) {
+        setLiveBanner(data[0].message);
+      }
+    } catch {
+      // Ignore if table not present
+    }
+  }
+
+  // 2. Fetch Active Listings Only (Admin Rejected Items Excluded)
   async function fetchLiveProducts() {
     setLoadingProducts(true);
     try {
       const { data, error } = await supabase
         .from("products")
         .select("*, profiles(full_name, phone, city)")
+        .or("status.eq.active,status.is.null")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -258,6 +307,8 @@ export default function SeldolMarketplace() {
           seller: item.profiles?.full_name || "SELDOL Seller",
           sellerRating: 4.9,
           phone: item.profiles?.phone || "",
+          isFeatured: Boolean(item.is_featured),
+          status: item.status || "active",
           createdAt: new Date(item.created_at).getTime(),
         }));
         setProducts(formatted);
@@ -324,7 +375,9 @@ export default function SeldolMarketplace() {
               key,
               productId: m.product_id,
               productTitle: m.products?.title || "Product Listing",
-              productImage: m.products?.images?.[0] || "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=300&q=80",
+              productImage:
+                m.products?.images?.[0] ||
+                "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=300&q=80",
               price: Number(m.products?.price) || 0,
               otherUserId: otherId,
               otherUserName: otherName,
@@ -347,7 +400,6 @@ export default function SeldolMarketplace() {
   useEffect(() => {
     if (!activeChat || !user) return;
 
-    // Load initial 1-on-1 history
     const loadConversation = async () => {
       const { data, error } = await supabase
         .from("messages")
@@ -509,6 +561,11 @@ export default function SeldolMarketplace() {
       return;
     }
 
+    if (isBannedUser) {
+      alert("Your account has been restricted by administrators from posting ads.");
+      return;
+    }
+
     if (!newTitle.trim() || !newPrice || !newLocation.trim()) {
       setNotice("Please fill in required fields!");
       return;
@@ -563,6 +620,7 @@ export default function SeldolMarketplace() {
           location: newLocation.trim(),
           description: newDescription.trim() || "No detailed description provided.",
           images: finalImages,
+          status: "active",
         })
         .select("*, profiles(full_name, phone, city)")
         .single();
@@ -583,6 +641,7 @@ export default function SeldolMarketplace() {
         seller: profileName,
         sellerRating: 5.0,
         phone: newPhone.trim() || profilePhone,
+        status: "active",
         createdAt: Date.now(),
       };
 
@@ -623,6 +682,8 @@ export default function SeldolMarketplace() {
     setFavorites([]);
     setChatThreads([]);
     setActiveChat(null);
+    setIsAdminUser(false);
+    setIsBannedUser(false);
     setNotice("Logged out.");
     showPage("home");
   };
@@ -631,6 +692,10 @@ export default function SeldolMarketplace() {
   const startChat = (product: Product) => {
     if (!user) {
       setNotice("Please log in to chat with the seller!");
+      return;
+    }
+    if (isBannedUser) {
+      alert("Your account cannot send messages due to platform restrictions.");
       return;
     }
     if (user.id === product.userId) {
@@ -655,6 +720,11 @@ export default function SeldolMarketplace() {
   const sendChat = async (e: FormEvent) => {
     e.preventDefault();
     if (!chatText.trim() || !activeChat || !user || sendingMsg) return;
+
+    if (isBannedUser) {
+      alert("Your account is restricted from sending messages.");
+      return;
+    }
 
     setSendingMsg(true);
     const content = chatText.trim();
@@ -708,13 +778,13 @@ export default function SeldolMarketplace() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 antialiased selection:bg-violet-600 selection:text-white">
-      {/* Top Banner */}
+      {/* Top Banner (Synced with Admin Broadcast) */}
       <div className="bg-slate-950 px-4 py-2 text-center text-xs font-medium text-slate-300">
         <span className="mr-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
           VERIFIED MARKETPLACE
         </span>
-        Buy & Sell pre-loved products directly with zero middleman commission across India.
+        {liveBanner || "Buy & Sell pre-loved products directly with zero middleman commission across India."}
       </div>
 
       {/* Main Header */}
@@ -787,6 +857,16 @@ export default function SeldolMarketplace() {
               <Package size={17} className="text-violet-600" />
               <span>My Ads ({ownProducts.length})</span>
             </button>
+
+            {isAdminUser && (
+              <Link
+                href="/admin/"
+                className="flex items-center gap-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-xs font-bold text-amber-600 transition hover:bg-amber-500 hover:text-white"
+              >
+                <ShieldAlert size={15} />
+                <span>Admin</span>
+              </Link>
+            )}
 
             {user ? (
               <button
@@ -861,6 +941,14 @@ export default function SeldolMarketplace() {
               >
                 <MessageCircle size={18} className="text-emerald-600" /> Chats
               </button>
+              {isAdminUser && (
+                <Link
+                  href="/admin/"
+                  className="col-span-2 flex items-center gap-2 rounded-xl bg-amber-50 p-3 text-amber-800 border border-amber-200"
+                >
+                  <ShieldAlert size={18} className="text-amber-600" /> Open Root Admin Dashboard
+                </Link>
+              )}
               {user ? (
                 <button
                   onClick={() => showPage("profile")}
@@ -1078,7 +1166,7 @@ export default function SeldolMarketplace() {
               {loadingProducts ? (
                 <div className="flex flex-col items-center justify-center p-16 text-slate-400">
                   <Loader2 size={32} className="animate-spin text-violet-600" />
-                  <p className="mt-3 text-xs font-bold">Loading live listings...</p>
+                  <p className="mt-3 text-xs font-bold">Loading verified live listings...</p>
                 </div>
               ) : filteredProducts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
@@ -1356,6 +1444,14 @@ export default function SeldolMarketplace() {
                 >
                   <LogIn size={16} /> Go to Login Page
                 </Link>
+              </div>
+            ) : isBannedUser ? (
+              <div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center shadow-sm text-rose-800">
+                <ShieldAlert size={36} className="mx-auto text-rose-600" />
+                <h2 className="mt-3 text-xl font-black">Account Restricted</h2>
+                <p className="mt-1 text-xs text-rose-700 max-w-sm mx-auto">
+                  Your account has been restricted by administrators from posting new listings. Contact support.
+                </p>
               </div>
             ) : (
               <>
@@ -1836,7 +1932,14 @@ export default function SeldolMarketplace() {
                   {profileName[0]}
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">{profileName}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-slate-900">{profileName}</h3>
+                    {isAdminUser && (
+                      <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-black text-rose-700">
+                        ADMIN
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-slate-400">{user?.email || "No email linked"}</p>
                 </div>
               </div>
@@ -1861,7 +1964,18 @@ export default function SeldolMarketplace() {
                 />
               </div>
 
-              <div className="pt-2">
+              {isAdminUser && (
+                <div className="pt-2">
+                  <Link
+                    href="/admin/"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-xs font-black uppercase tracking-wider text-white transition hover:bg-slate-800"
+                  >
+                    <ShieldAlert size={16} className="text-amber-400" /> Open Root Admin Dashboard
+                  </Link>
+                </div>
+              )}
+
+              <div className="pt-1">
                 <button
                   type="button"
                   onClick={handleLogout}
