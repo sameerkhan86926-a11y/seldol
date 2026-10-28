@@ -7,6 +7,8 @@ import {
   type FormEvent,
   type ChangeEvent,
 } from "react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 import {
   Search,
@@ -20,7 +22,6 @@ import {
   ChevronRight,
   ChevronLeft,
   X,
-  Upload,
   Smartphone,
   CarFront,
   Laptop,
@@ -40,18 +41,15 @@ import {
   Phone,
   CheckCircle2,
   Sparkles,
-  Clock3,
   IndianRupee,
-  Settings,
   Star,
   BadgeCheck,
   ImagePlus,
   Zap,
   MessageSquare,
   Share2,
-  Filter,
-  Check,
-  CircleUserRound,
+  LogOut,
+  LogIn,
 } from "lucide-react";
 
 type PageName =
@@ -67,6 +65,7 @@ type ItemCondition = "Brand New" | "Like New" | "Good" | "Fair";
 
 type Product = {
   id: string;
+  userId?: string;
   title: string;
   price: number;
   isNegotiable?: boolean;
@@ -257,41 +256,111 @@ export default function SeldolMarketplace() {
   const [newLocation, setNewLocation] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [newImages, setNewImages] = useState<string[]>([]);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
+  const [isPublishing, setIsPublishing] = useState(false);
 
-  // User Profile
-  const [profileName, setProfileName] = useState("Sameer Malik");
+  // Supabase Auth Session
+  const [user, setUser] = useState<any>(null);
+  const [profileName, setProfileName] = useState("Guest User");
   const [profileCity, setProfileCity] = useState("Delhi, India");
-  const [profilePhone, setProfilePhone] = useState("9953023531");
-  const [profileSaved, setProfileSaved] = useState(false);
+  const [profilePhone, setProfilePhone] = useState("");
 
-  // In-app Chat Simulation
+  // In-app Realtime / Simulated Chat
   const [chatProduct, setChatProduct] = useState<Product | null>(null);
   const [chatText, setChatText] = useState("");
   const [chatMessages, setChatMessages] = useState<
     { id: string; productId: string; sender: string; text: string; time: number }[]
   >([]);
 
-  // LocalStorage sync
+  // 1. Check Supabase Session & Load DB listings
+  useEffect(() => {
+    let active = true;
+
+    async function initSession() {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (active && data?.session?.user) {
+          const u = data.session.user;
+          setUser(u);
+          setProfileName(u.user_metadata?.full_name || u.email?.split("@")[0] || "SELDOL Member");
+          setProfilePhone(u.user_metadata?.phone || "");
+        }
+      } catch (err) {
+        console.error("Auth check error:", err);
+      }
+    }
+
+    void initSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      if (session?.user) {
+        const u = session.user;
+        setUser(u);
+        setProfileName(u.user_metadata?.full_name || u.email?.split("@")[0] || "SELDOL Member");
+        setProfilePhone(u.user_metadata?.phone || "");
+      } else {
+        setUser(null);
+        setProfileName("Guest User");
+        setProfilePhone("");
+      }
+    });
+
+    // Fetch live listings from Supabase products table
+    async function loadCloudProducts() {
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("*, profiles(full_name, phone, city)")
+          .order("created_at", { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          const formatted: Product[] = data.map((item: any) => ({
+            id: item.id,
+            userId: item.user_id,
+            title: item.title,
+            price: Number(item.price),
+            isNegotiable: item.is_negotiable,
+            category: item.category,
+            condition: item.condition,
+            location: item.location,
+            description: item.description || "",
+            images: item.images && item.images.length > 0 ? item.images : [
+              "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=900&q=85"
+            ],
+            seller: item.profiles?.full_name || "SELDOL Member",
+            sellerRating: 4.9,
+            phone: item.profiles?.phone || "",
+            isFeatured: false,
+            createdAt: new Date(item.created_at).getTime(),
+          }));
+
+          setProducts([...formatted, ...DEMO_PRODUCTS]);
+        }
+      } catch (err) {
+        console.log("Using cached/demo products", err);
+      }
+    }
+
+    void loadCloudProducts();
+
+    return () => {
+      active = false;
+      subscription?.unsubscribe();
+    };
+  }, []);
+
+  // 2. Load LocalStorage Fallbacks
   useEffect(() => {
     try {
-      const savedProducts = localStorage.getItem("seldol_products_v2");
-      const savedFavorites = localStorage.getItem("seldol_favorites_v2");
-      const savedProfile = localStorage.getItem("seldol_profile_v2");
-      const savedChats = localStorage.getItem("seldol_chats_v2");
+      const savedFavorites = localStorage.getItem("seldol_favorites_v3");
+      const savedChats = localStorage.getItem("seldol_chats_v3");
 
-      if (savedProducts) {
-        const parsed = JSON.parse(savedProducts) as Product[];
-        setProducts([...parsed, ...DEMO_PRODUCTS]);
-      }
       if (savedFavorites) {
         setFavorites(JSON.parse(savedFavorites) as string[]);
-      }
-      if (savedProfile) {
-        const profile = JSON.parse(savedProfile);
-        if (profile.name) setProfileName(profile.name);
-        if (profile.city) setProfileCity(profile.city);
-        if (profile.phone) setProfilePhone(profile.phone);
       }
       if (savedChats) {
         setChatMessages(JSON.parse(savedChats));
@@ -307,7 +376,9 @@ export default function SeldolMarketplace() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
-  const ownProducts = products.filter((p) => !p.id.startsWith("demo-"));
+  const ownProducts = products.filter(
+    (p) => (user && p.userId === user.id) || p.seller === profileName
+  );
 
   const filteredProducts = useMemo(() => {
     let result = [...products];
@@ -356,7 +427,7 @@ export default function SeldolMarketplace() {
 
     setFavorites(updated);
     try {
-      localStorage.setItem("seldol_favorites_v2", JSON.stringify(updated));
+      localStorage.setItem("seldol_favorites_v3", JSON.stringify(updated));
     } catch {}
 
     setNotice(
@@ -375,37 +446,33 @@ export default function SeldolMarketplace() {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    if (newImages.length + files.length > 5) {
+    if (uploadFiles.length + files.length > 5) {
       setNotice("You can upload a maximum of 5 images");
       return;
     }
 
-    Array.from(files).forEach((file) => {
-      if (!file.type.startsWith("image/")) {
-        setNotice("Only image files are allowed");
-        return;
-      }
-      if (file.size > 3 * 1024 * 1024) {
-        setNotice("Each image must be under 3 MB");
-        return;
-      }
+    const newFiles = Array.from(files);
+    setUploadFiles((prev) => [...prev, ...newFiles]);
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === "string") {
-          setNewImages((prev) => [...prev, reader.result as string]);
-        }
-      };
-      reader.readAsDataURL(file);
+    // Local previews
+    newFiles.forEach((file) => {
+      const url = URL.createObjectURL(file);
+      setPreviewImages((prev) => [...prev, url]);
     });
   };
 
   const removeUploadImage = (index: number) => {
-    setNewImages((prev) => prev.filter((_, i) => i !== index));
+    setUploadFiles((prev) => prev.filter((_, i) => i !== index));
+    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSell = (event: FormEvent<HTMLFormElement>) => {
+  const handleSell = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (!user) {
+      setNotice("Please log in first to publish an ad!");
+      return;
+    }
 
     if (!newTitle.trim() || !newPrice || !newLocation.trim()) {
       setNotice("Please fill in all required fields!");
@@ -418,71 +485,126 @@ export default function SeldolMarketplace() {
       return;
     }
 
-    const fallbackImage =
-      "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=900&q=85";
+    setIsPublishing(true);
 
-    const product: Product = {
-      id: `user-${Date.now()}`,
-      title: newTitle.trim(),
-      price: priceNum,
-      isNegotiable: newNegotiable,
-      category: newCategory,
-      condition: newCondition,
-      location: newLocation.trim(),
-      description: newDescription.trim() || "No detailed description provided.",
-      images: newImages.length > 0 ? newImages : [fallbackImage],
-      seller: profileName,
-      sellerRating: 5.0,
-      phone: newPhone.trim() || profilePhone,
-      isFeatured: false,
-      createdAt: Date.now(),
-    };
-
-    const updatedOwn = [product, ...ownProducts];
     try {
-      localStorage.setItem("seldol_products_v2", JSON.stringify(updatedOwn));
-    } catch {
-      setNotice("Local storage full! Try uploading smaller images.");
-      return;
-    }
+      const uploadedUrls: string[] = [];
 
-    setProducts([product, ...products]);
-    // Reset Form
-    setNewTitle("");
-    setNewPrice("");
-    setNewLocation("");
-    setNewDescription("");
-    setNewPhone("");
-    setNewImages([]);
-    setSelectedProduct(product);
-    setPage("details");
-    setNotice("Ad posted successfully! 🎉");
+      // 1. Upload files to Supabase Storage if available
+      for (const file of uploadFiles) {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { error: uploadErr } = await supabase.storage
+          .from("product-images")
+          .upload(fileName, file);
+
+        if (!uploadErr) {
+          const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
+          uploadedUrls.push(data.publicUrl);
+        }
+      }
+
+      const finalImages =
+        uploadedUrls.length > 0
+          ? uploadedUrls
+          : previewImages.length > 0
+          ? previewImages
+          : [
+              "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=900&q=85",
+            ];
+
+      // 2. Insert to Supabase DB
+      const { data: insertedData, error: insertError } = await supabase
+        .from("products")
+        .insert({
+          user_id: user.id,
+          title: newTitle.trim(),
+          price: priceNum,
+          is_negotiable: newNegotiable,
+          category: newCategory,
+          condition: newCondition,
+          location: newLocation.trim(),
+          description: newDescription.trim() || "No detailed description provided.",
+          images: finalImages,
+        })
+        .select("*, profiles(full_name, phone, city)")
+        .single();
+
+      let newProduct: Product;
+
+      if (!insertError && insertedData) {
+        newProduct = {
+          id: insertedData.id,
+          userId: insertedData.user_id,
+          title: insertedData.title,
+          price: Number(insertedData.price),
+          isNegotiable: insertedData.is_negotiable,
+          category: insertedData.category,
+          condition: insertedData.condition,
+          location: insertedData.location,
+          description: insertedData.description,
+          images: insertedData.images,
+          seller: profileName,
+          sellerRating: 5.0,
+          phone: newPhone.trim() || profilePhone,
+          isFeatured: false,
+          createdAt: Date.now(),
+        };
+      } else {
+        // Local fallback if table doesn't exist yet
+        newProduct = {
+          id: `local-${Date.now()}`,
+          userId: user.id,
+          title: newTitle.trim(),
+          price: priceNum,
+          isNegotiable: newNegotiable,
+          category: newCategory,
+          condition: newCondition,
+          location: newLocation.trim(),
+          description: newDescription.trim() || "No detailed description provided.",
+          images: finalImages,
+          seller: profileName,
+          sellerRating: 5.0,
+          phone: newPhone.trim() || profilePhone,
+          isFeatured: false,
+          createdAt: Date.now(),
+        };
+      }
+
+      setProducts([newProduct, ...products]);
+      setNewTitle("");
+      setNewPrice("");
+      setNewLocation("");
+      setNewDescription("");
+      setNewPhone("");
+      setUploadFiles([]);
+      setPreviewImages([]);
+
+      setSelectedProduct(newProduct);
+      setPage("details");
+      setNotice("Ad published successfully to SELDOL! 🎉");
+    } catch (err: any) {
+      setNotice(err?.message || "Failed to publish listing.");
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
-  const deleteProduct = (id: string) => {
-    const updatedOwn = ownProducts.filter((p) => p.id !== id);
-    const updatedProducts = products.filter((p) => p.id !== id);
-    setProducts(updatedProducts);
-    try {
-      localStorage.setItem("seldol_products_v2", JSON.stringify(updatedOwn));
-    } catch {}
+  const deleteProduct = async (id: string) => {
+    if (!id.startsWith("demo-")) {
+      await supabase.from("products").delete().eq("id", id);
+    }
+    setProducts((prev) => prev.filter((p) => p.id !== id));
     setNotice("Listing removed");
   };
 
-  const saveProfile = (e: FormEvent) => {
-    e.preventDefault();
-    try {
-      localStorage.setItem(
-        "seldol_profile_v2",
-        JSON.stringify({
-          name: profileName,
-          city: profileCity,
-          phone: profilePhone,
-        })
-      );
-    } catch {}
-    setProfileSaved(true);
-    setNotice("Profile saved successfully ✨");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setProfileName("Guest User");
+    setNotice("You have logged out.");
+    showPage("home");
   };
 
   const startChat = (product: Product) => {
@@ -503,16 +625,16 @@ export default function SeldolMarketplace() {
       time: Date.now(),
     };
 
-    let updated = [...chatMessages, userMsg];
+    const updated = [...chatMessages, userMsg];
     setChatMessages(updated);
     setChatText("");
 
-    // Simulate smart seller reply
+    // Simulate smart seller response
     setTimeout(() => {
       const sellerReplies = [
-        "Yes, it is available! When would you like to check it?",
+        "Yes, it is available! When would you like to inspect it?",
         "Price is slightly negotiable if you pick it up today.",
-        "Sure! You can inspect the condition in person anytime after 5 PM.",
+        "Sure! You can check the condition in person anytime after 5 PM.",
       ];
       const randomReply =
         sellerReplies[Math.floor(Math.random() * sellerReplies.length)];
@@ -524,15 +646,11 @@ export default function SeldolMarketplace() {
         text: randomReply,
         time: Date.now(),
       };
-      const finalMsgs = [...updated, replyMsg];
-      setChatMessages(finalMsgs);
-      try {
-        localStorage.setItem("seldol_chats_v2", JSON.stringify(finalMsgs));
-      } catch {}
+      setChatMessages((prev) => [...prev, replyMsg]);
     }, 1200);
 
     try {
-      localStorage.setItem("seldol_chats_v2", JSON.stringify(updated));
+      localStorage.setItem("seldol_chats_v3", JSON.stringify(updated));
     } catch {}
   };
 
@@ -562,9 +680,9 @@ export default function SeldolMarketplace() {
       <div className="bg-slate-950 px-4 py-2 text-center text-xs font-medium text-slate-300">
         <span className="mr-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          LIVE MARKETPLACE
+          VERIFIED MARKETPLACE
         </span>
-        Buy & Sell pre-loved verified products directly with zero middleman fees.
+        Buy & Sell pre-loved products directly with zero middleman commission across India.
       </div>
 
       {/* Main Header */}
@@ -639,13 +757,23 @@ export default function SeldolMarketplace() {
               <span>My Ads</span>
             </button>
 
-            <button
-              onClick={() => showPage("profile")}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-violet-300 hover:bg-violet-50/50"
-            >
-              <UserRound size={17} className="text-slate-600" />
-              <span>{profileName.split(" ")[0]}</span>
-            </button>
+            {user ? (
+              <button
+                onClick={() => showPage("profile")}
+                className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-violet-300 hover:bg-violet-50/50"
+              >
+                <UserRound size={17} className="text-slate-600" />
+                <span>{profileName.split(" ")[0]}</span>
+              </button>
+            ) : (
+              <Link
+                href="/login/"
+                className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-700 transition hover:border-violet-300 hover:bg-violet-50"
+              >
+                <LogIn size={15} className="text-violet-600" />
+                <span>Login</span>
+              </Link>
+            )}
 
             <button
               onClick={() => showPage("sell")}
@@ -702,12 +830,21 @@ export default function SeldolMarketplace() {
               >
                 <MessageCircle size={18} className="text-emerald-600" /> Chats
               </button>
-              <button
-                onClick={() => showPage("profile")}
-                className="col-span-2 flex items-center gap-2 rounded-xl border border-slate-100 p-3 hover:bg-slate-50"
-              >
-                <UserRound size={18} className="text-slate-600" /> Profile: {profileName}
-              </button>
+              {user ? (
+                <button
+                  onClick={() => showPage("profile")}
+                  className="col-span-2 flex items-center gap-2 rounded-xl border border-slate-100 p-3 hover:bg-slate-50"
+                >
+                  <UserRound size={18} className="text-slate-600" /> Profile: {profileName}
+                </button>
+              ) : (
+                <Link
+                  href="/login/"
+                  className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-slate-900 p-3 text-white"
+                >
+                  <LogIn size={18} /> Sign In to SELDOL
+                </Link>
+              )}
             </div>
           </div>
         )}
@@ -718,7 +855,6 @@ export default function SeldolMarketplace() {
         {/* ===================== HOME PAGE ===================== */}
         {page === "home" && (
           <div className="space-y-8">
-            {/* Hero Banner (Only shown if no active filter) */}
             {!search && category === "All" && !location && (
               <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-violet-950 p-7 text-white shadow-xl sm:p-12">
                 <div className="relative z-10 max-w-2xl space-y-4">
@@ -797,7 +933,6 @@ export default function SeldolMarketplace() {
             {/* Filter & Search Bar */}
             <div id="browse-section" className="space-y-4">
               <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
-                {/* Search & Location inputs */}
                 <div className="flex flex-1 flex-col gap-3 sm:flex-row">
                   <div className="flex flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
                     <Search size={16} className="text-slate-400" />
@@ -825,9 +960,7 @@ export default function SeldolMarketplace() {
                   </div>
                 </div>
 
-                {/* Filter dropdowns */}
                 <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-                  {/* Condition Filter */}
                   <select
                     value={conditionFilter}
                     onChange={(e) => setConditionFilter(e.target.value)}
@@ -840,7 +973,6 @@ export default function SeldolMarketplace() {
                     <option value="Fair">Fair</option>
                   </select>
 
-                  {/* Max Budget */}
                   <select
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(e.target.value)}
@@ -854,7 +986,6 @@ export default function SeldolMarketplace() {
                     <option value="150000">Under ₹1.5 Lakh</option>
                   </select>
 
-                  {/* Sorting */}
                   <select
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
@@ -865,7 +996,6 @@ export default function SeldolMarketplace() {
                     <option value="high">Price: High to Low</option>
                   </select>
 
-                  {/* View Mode Toggle */}
                   <div className="hidden items-center rounded-xl border border-slate-200 bg-slate-50 p-0.5 sm:flex">
                     <button
                       onClick={() => setViewMode("grid")}
@@ -909,12 +1039,12 @@ export default function SeldolMarketplace() {
                 )}
               </div>
 
-              {/* Products Feed */}
+              {/* Feed */}
               {filteredProducts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
                   <Package size={48} className="text-slate-300" />
                   <h3 className="mt-4 text-base font-bold text-slate-800">No items match your criteria</h3>
-                  <p className="mt-1 text-xs text-slate-500">Try loosening your search keywords or price filters.</p>
+                  <p className="mt-1 text-xs text-slate-500">Try changing your search terms or filters.</p>
                 </div>
               ) : viewMode === "grid" ? (
                 <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4">
@@ -956,9 +1086,7 @@ export default function SeldolMarketplace() {
             </button>
 
             <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-              {/* Left Column: Image Slider & Description */}
               <div className="space-y-6">
-                {/* Images */}
                 <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-2">
                   <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-slate-100">
                     <img
@@ -995,7 +1123,6 @@ export default function SeldolMarketplace() {
                     </span>
                   </div>
 
-                  {/* Thumbnail Row */}
                   {selectedProduct.images.length > 1 && (
                     <div className="mt-2 flex gap-2 overflow-x-auto p-1">
                       {selectedProduct.images.map((img, i) => (
@@ -1013,7 +1140,6 @@ export default function SeldolMarketplace() {
                   )}
                 </div>
 
-                {/* Details Accordion / Specs */}
                 <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6">
                   <h3 className="text-base font-extrabold text-slate-900">Description & Specifications</h3>
                   <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
@@ -1043,7 +1169,7 @@ export default function SeldolMarketplace() {
                 </div>
               </div>
 
-              {/* Right Column: Pricing & Seller Quick Action */}
+              {/* Right Column */}
               <div className="space-y-5">
                 <div className="space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
@@ -1153,7 +1279,6 @@ export default function SeldolMarketplace() {
                   </div>
                 </div>
 
-                {/* Safety advice */}
                 <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-xs text-amber-900">
                   <ShieldCheck size={20} className="shrink-0 text-amber-700" />
                   <div>
@@ -1178,177 +1303,194 @@ export default function SeldolMarketplace() {
               <ArrowLeft size={16} /> Cancel & Return
             </button>
 
-            <div>
-              <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Post Free Advertisement</h1>
-              <p className="mt-1 text-xs text-slate-500">
-                Reach thousands of genuine buyers across your city in minutes.
-              </p>
-            </div>
-
-            <form onSubmit={handleSell} className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-              {/* Photo Upload Area */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                  Upload Photos (Max 5)
-                </label>
-                <div className="mt-2 grid grid-cols-3 gap-3 sm:grid-cols-5">
-                  {newImages.map((img, i) => (
-                    <div key={i} className="group relative aspect-square rounded-2xl border border-slate-200 overflow-hidden bg-slate-50">
-                      <img src={img} alt="" className="h-full w-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => removeUploadImage(i)}
-                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-white shadow-md transition hover:scale-110"
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  ))}
-
-                  {newImages.length < 5 && (
-                    <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition hover:border-violet-500 hover:bg-violet-50/30 hover:text-violet-600">
-                      <ImagePlus size={24} />
-                      <span className="mt-1 text-[10px] font-bold">Add Photo</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleMultipleImages}
-                        className="hidden"
-                      />
-                    </label>
-                  )}
+            {!user ? (
+              <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 text-violet-600">
+                  <UserRound size={28} />
                 </div>
+                <h2 className="mt-4 text-xl font-black text-slate-900">Login Required to Sell</h2>
+                <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
+                  Please sign in or create a free SELDOL account before posting your products.
+                </p>
+                <Link
+                  href="/login/"
+                  className="mt-6 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-6 py-3 text-xs font-bold text-white shadow-md shadow-violet-600/20 hover:bg-violet-700"
+                >
+                  <LogIn size={16} /> Go to Login Page
+                </Link>
               </div>
-
-              {/* Title & Category */}
-              <div className="space-y-4">
+            ) : (
+              <>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700">Ad Title *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="e.g. Royal Enfield Hunter 350 Dapper Ash, 2023"
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-medium outline-none focus:border-violet-500 focus:bg-white"
-                  />
+                  <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Post Free Advertisement</h1>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Reach thousands of buyers across your city.
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <form onSubmit={handleSell} className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                  {/* Photo Upload Area */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700">Category *</label>
-                    <select
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value)}
-                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold outline-none focus:border-violet-500"
-                    >
-                      {CATEGORIES.filter((c) => c.name !== "All").map((c) => (
-                        <option key={c.name} value={c.name}>
-                          {c.name}
-                        </option>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Upload Photos (Max 5)
+                    </label>
+                    <div className="mt-2 grid grid-cols-3 gap-3 sm:grid-cols-5">
+                      {previewImages.map((img, i) => (
+                        <div key={i} className="group relative aspect-square rounded-2xl border border-slate-200 overflow-hidden bg-slate-50">
+                          <img src={img} alt="" className="h-full w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeUploadImage(i)}
+                            className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-white shadow-md transition hover:scale-110"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
                       ))}
-                    </select>
-                  </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700">Condition *</label>
-                    <select
-                      value={newCondition}
-                      onChange={(e) => setNewCondition(e.target.value as ItemCondition)}
-                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold outline-none focus:border-violet-500"
-                    >
-                      <option value="Brand New">Brand New (Unused)</option>
-                      <option value="Like New">Like New (Minimal Use)</option>
-                      <option value="Good">Good (Working fine)</option>
-                      <option value="Fair">Fair (Has wear & tear)</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Price & Negotiable Checkbox */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700">Price (₹) *</label>
-                    <div className="mt-1.5 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-violet-500 focus-within:bg-white">
-                      <IndianRupee size={15} className="text-slate-400" />
-                      <input
-                        type="number"
-                        required
-                        value={newPrice}
-                        onChange={(e) => setNewPrice(e.target.value)}
-                        placeholder="Expected Amount"
-                        className="w-full bg-transparent px-2 py-2.5 text-xs font-bold outline-none"
-                      />
+                      {previewImages.length < 5 && (
+                        <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition hover:border-violet-500 hover:bg-violet-50/30 hover:text-violet-600">
+                          <ImagePlus size={24} />
+                          <span className="mt-1 text-[10px] font-bold">Add Photo</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleMultipleImages}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center sm:pt-6">
-                    <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={newNegotiable}
-                        onChange={(e) => setNewNegotiable(e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
-                      />
-                      Price is Negotiable
-                    </label>
-                  </div>
-                </div>
-
-                {/* Location & Phone */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700">Your Location *</label>
-                    <div className="mt-1.5 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-violet-500 focus-within:bg-white">
-                      <MapPin size={15} className="text-slate-400" />
+                  {/* Title & Category */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700">Ad Title *</label>
                       <input
                         type="text"
                         required
-                        value={newLocation}
-                        onChange={(e) => setNewLocation(e.target.value)}
-                        placeholder="e.g. Rohini Sector 7, Delhi"
-                        className="w-full bg-transparent px-2 py-2.5 text-xs font-medium outline-none"
+                        value={newTitle}
+                        onChange={(e) => setNewTitle(e.target.value)}
+                        placeholder="e.g. Royal Enfield Hunter 350 Dapper Ash, 2023"
+                        className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-medium outline-none focus:border-violet-500 focus:bg-white"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700">Category *</label>
+                        <select
+                          value={newCategory}
+                          onChange={(e) => setNewCategory(e.target.value)}
+                          className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold outline-none focus:border-violet-500"
+                        >
+                          {CATEGORIES.filter((c) => c.name !== "All").map((c) => (
+                            <option key={c.name} value={c.name}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700">Condition *</label>
+                        <select
+                          value={newCondition}
+                          onChange={(e) => setNewCondition(e.target.value as ItemCondition)}
+                          className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold outline-none focus:border-violet-500"
+                        >
+                          <option value="Brand New">Brand New (Unused)</option>
+                          <option value="Like New">Like New (Minimal Use)</option>
+                          <option value="Good">Good (Working fine)</option>
+                          <option value="Fair">Fair (Has wear & tear)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700">Price (₹) *</label>
+                        <div className="mt-1.5 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-violet-500 focus-within:bg-white">
+                          <IndianRupee size={15} className="text-slate-400" />
+                          <input
+                            type="number"
+                            required
+                            value={newPrice}
+                            onChange={(e) => setNewPrice(e.target.value)}
+                            placeholder="Expected Amount"
+                            className="w-full bg-transparent px-2 py-2.5 text-xs font-bold outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center sm:pt-6">
+                        <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={newNegotiable}
+                            onChange={(e) => setNewNegotiable(e.target.checked)}
+                            className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                          />
+                          Price is Negotiable
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700">Your Location *</label>
+                        <div className="mt-1.5 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-violet-500 focus-within:bg-white">
+                          <MapPin size={15} className="text-slate-400" />
+                          <input
+                            type="text"
+                            required
+                            value={newLocation}
+                            onChange={(e) => setNewLocation(e.target.value)}
+                            placeholder="e.g. Rohini Sector 7, Delhi"
+                            className="w-full bg-transparent px-2 py-2.5 text-xs font-medium outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700">Contact Number</label>
+                        <div className="mt-1.5 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-violet-500 focus-within:bg-white">
+                          <Phone size={15} className="text-slate-400" />
+                          <input
+                            type="tel"
+                            value={newPhone}
+                            onChange={(e) => setNewPhone(e.target.value)}
+                            placeholder="10 digit number"
+                            className="w-full bg-transparent px-2 py-2.5 text-xs font-medium outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700">Description</label>
+                      <textarea
+                        rows={4}
+                        value={newDescription}
+                        onChange={(e) => setNewDescription(e.target.value)}
+                        placeholder="Provide details such as purchase date, condition, accessories, reason for selling..."
+                        className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-medium outline-none focus:border-violet-500 focus:bg-white"
                       />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700">Phone for WhatsApp/Calls</label>
-                    <div className="mt-1.5 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-violet-500 focus-within:bg-white">
-                      <Phone size={15} className="text-slate-400" />
-                      <input
-                        type="tel"
-                        value={newPhone}
-                        onChange={(e) => setNewPhone(e.target.value)}
-                        placeholder="10 digit number"
-                        className="w-full bg-transparent px-2 py-2.5 text-xs font-medium outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700">Description</label>
-                  <textarea
-                    rows={4}
-                    value={newDescription}
-                    onChange={(e) => setNewDescription(e.target.value)}
-                    placeholder="Provide details such as purchase date, condition, included accessories, reason for selling..."
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-medium outline-none focus:border-violet-500 focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* Submit */}
-              <button
-                type="submit"
-                className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-violet-600/25 transition hover:brightness-105 active:scale-95"
-              >
-                Post Advertisement Now
-              </button>
-            </form>
+                  <button
+                    type="submit"
+                    disabled={isPublishing}
+                    className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-violet-600/25 transition hover:brightness-105 active:scale-95 disabled:opacity-50"
+                  >
+                    {isPublishing ? "Uploading & Publishing..." : "Post Advertisement Now"}
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         )}
 
@@ -1359,7 +1501,7 @@ export default function SeldolMarketplace() {
               <div>
                 <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">My Listings</h1>
                 <p className="mt-1 text-xs text-slate-500">
-                  Manage the items you've posted on this device.
+                  Manage the items you've posted on SELDOL.
                 </p>
               </div>
               <button
@@ -1474,12 +1616,11 @@ export default function SeldolMarketplace() {
             <div>
               <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Direct In-App Messages</h1>
               <p className="mt-1 text-xs text-slate-500">
-                Chat securely with sellers and buyers in real-time demo mode.
+                Chat securely with sellers and buyers in real-time.
               </p>
             </div>
 
             <div className="grid min-h-[500px] overflow-hidden rounded-3xl border border-slate-200 bg-white md:grid-cols-[300px_1fr]">
-              {/* Left Contacts List */}
               <div className="border-r border-slate-100 bg-slate-50/50">
                 <div className="border-b border-slate-100 p-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -1508,11 +1649,9 @@ export default function SeldolMarketplace() {
                 </div>
               </div>
 
-              {/* Chat View */}
               <div className="flex flex-col justify-between">
                 {chatProduct ? (
                   <>
-                    {/* Header */}
                     <div className="flex items-center justify-between border-b border-slate-100 p-4">
                       <div className="flex items-center gap-3">
                         <img
@@ -1535,7 +1674,6 @@ export default function SeldolMarketplace() {
                       </button>
                     </div>
 
-                    {/* Chat Bubble Area */}
                     <div className="flex-1 space-y-3 overflow-y-auto p-4 max-h-[350px]">
                       <div className="rounded-xl bg-violet-50 p-3 text-center text-[11px] text-violet-800">
                         🔒 Safe Chat initiated for <strong>{chatProduct.title}</strong>. Never send advance money before checking the item.
@@ -1574,7 +1712,6 @@ export default function SeldolMarketplace() {
                         })}
                     </div>
 
-                    {/* Input */}
                     <form onSubmit={sendChat} className="flex gap-2 border-t border-slate-100 p-3">
                       <input
                         value={chatText}
@@ -1606,20 +1743,20 @@ export default function SeldolMarketplace() {
         {page === "profile" && (
           <div className="mx-auto max-w-xl space-y-6">
             <div>
-              <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Seller Profile</h1>
+              <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">My Account</h1>
               <p className="mt-1 text-xs text-slate-500">
-                Update your public name, primary city, and verified contact number.
+                Your authenticated profile details on SELDOL.
               </p>
             </div>
 
-            <form onSubmit={saveProfile} className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-center gap-4 border-b border-slate-100 pb-5">
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-2xl font-black text-white">
                   {profileName[0]}
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">{profileName}</h3>
-                  <p className="text-xs text-slate-400">{profileCity}</p>
+                  <p className="text-xs text-slate-400">{user?.email || "No email linked"}</p>
                 </div>
               </div>
 
@@ -1627,41 +1764,32 @@ export default function SeldolMarketplace() {
                 <label className="block text-xs font-bold text-slate-700">Display Name</label>
                 <input
                   type="text"
-                  required
+                  disabled
                   value={profileName}
-                  onChange={(e) => setProfileName(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold outline-none focus:border-violet-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700">Primary City / State</label>
-                <input
-                  type="text"
-                  required
-                  value={profileCity}
-                  onChange={(e) => setProfileCity(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold outline-none focus:border-violet-500"
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-xs font-semibold text-slate-600 outline-none"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700">Contact Number</label>
                 <input
-                  type="tel"
-                  value={profilePhone}
-                  onChange={(e) => setProfilePhone(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold outline-none focus:border-violet-500"
+                  type="text"
+                  disabled
+                  value={profilePhone || "Not provided"}
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-xs font-semibold text-slate-600 outline-none"
                 />
               </div>
 
-              <button
-                type="submit"
-                className="w-full rounded-xl bg-violet-600 py-3 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-violet-600/20 hover:bg-violet-700 active:scale-95"
-              >
-                Save Profile
-              </button>
-            </form>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 py-3 text-xs font-bold text-rose-600 transition hover:bg-rose-100"
+                >
+                  <LogOut size={16} /> Sign Out of Account
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </main>
@@ -1673,16 +1801,16 @@ export default function SeldolMarketplace() {
           { label: "Wishlist", p: "wishlist" as PageName, icon: Heart, count: favorites.length },
           { label: "Sell", p: "sell" as PageName, icon: Plus, isAction: true },
           { label: "Chats", p: "messages" as PageName, icon: MessageCircle },
-          { label: "Profile", p: "profile" as PageName, icon: UserRound },
+          { label: "Profile", p: user ? ("profile" as PageName) : null, href: user ? null : "/login/", icon: UserRound },
         ].map((item) => {
           const Icon = item.icon;
-          const isActive = page === item.p;
+          const isActive = item.p ? page === item.p : false;
 
           if (item.isAction) {
             return (
               <button
                 key={item.label}
-                onClick={() => showPage(item.p)}
+                onClick={() => showPage(item.p!)}
                 className="flex flex-col items-center justify-center text-[10px] font-bold text-white"
               >
                 <div className="flex h-10 w-10 -translate-y-2 items-center justify-center rounded-full bg-violet-600 shadow-lg shadow-violet-600/30">
@@ -1693,10 +1821,23 @@ export default function SeldolMarketplace() {
             );
           }
 
+          if (item.href) {
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="flex flex-col items-center justify-center text-[10px] font-bold text-slate-400"
+              >
+                <Icon size={20} />
+                <span className="mt-1">{item.label}</span>
+              </Link>
+            );
+          }
+
           return (
             <button
               key={item.label}
-              onClick={() => showPage(item.p)}
+              onClick={() => showPage(item.p!)}
               className={`relative flex flex-col items-center justify-center text-[10px] font-bold transition ${
                 isActive ? "text-violet-600" : "text-slate-400"
               }`}
@@ -1739,7 +1880,6 @@ function ProductGridCard({
 }) {
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white transition hover:-translate-y-1 hover:border-violet-300 hover:shadow-xl hover:shadow-violet-950/5">
-      {/* Thumbnail */}
       <div className="relative aspect-[4/3] w-full cursor-pointer overflow-hidden bg-slate-100" onClick={onOpen}>
         <img
           src={product.images[0]}
@@ -1764,7 +1904,6 @@ function ProductGridCard({
         </button>
       </div>
 
-      {/* Content */}
       <div className="flex flex-1 flex-col justify-between p-3.5">
         <div>
           <div className="flex items-center justify-between">
