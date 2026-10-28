@@ -1,27 +1,32 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+const basePath = "/seldol";
+
 export const metadata: Metadata = {
-  title: "SELDOL — Buy Smart. Sell Easy.",
+  title: {
+    default: "SELDOL — Buy Smart. Sell Easy.",
+    template: "%s | SELDOL",
+  },
   description:
-    "Buy and sell second-hand products across India. Discover great deals on mobiles, bikes, electronics, furniture and more with SELDOL.",
+    "Discover pre-owned products across India. Buy and sell second-hand mobiles, electronics, fashion, accessories and furniture on SELDOL.",
   applicationName: "SELDOL",
-  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "SELDOL",
   },
   icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
+    icon: `${basePath}/icon.svg`,
+    apple: `${basePath}/icon.svg`,
   },
+  manifest: `${basePath}/manifest.json`,
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#1767d2",
+  themeColor: "#111827",
 };
 
 export default function RootLayout({
