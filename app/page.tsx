@@ -17,8 +17,6 @@ import {
   UserRound,
   Plus,
   MapPin,
-  SlidersHorizontal,
-  ArrowUpDown,
   ChevronRight,
   ChevronLeft,
   X,
@@ -33,7 +31,6 @@ import {
   Package,
   ShoppingBag,
   ShieldCheck,
-  Headphones,
   Menu,
   Trash2,
   ArrowLeft,
@@ -45,11 +42,11 @@ import {
   Star,
   BadgeCheck,
   ImagePlus,
-  Zap,
   MessageSquare,
   Share2,
   LogOut,
   LogIn,
+  Loader2,
 } from "lucide-react";
 
 type PageName =
@@ -65,10 +62,10 @@ type ItemCondition = "Brand New" | "Like New" | "Good" | "Fair";
 
 type Product = {
   id: string;
-  userId?: string;
+  userId: string;
   title: string;
   price: number;
-  isNegotiable?: boolean;
+  isNegotiable: boolean;
   category: string;
   condition: ItemCondition;
   location: string;
@@ -81,6 +78,15 @@ type Product = {
   createdAt: number;
 };
 
+type ChatMessage = {
+  id: string;
+  product_id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  created_at: string;
+};
+
 const CATEGORIES = [
   { name: "All", icon: LayoutGrid },
   { name: "Mobiles", icon: Smartphone },
@@ -89,121 +95,6 @@ const CATEGORIES = [
   { name: "Furniture", icon: Armchair },
   { name: "Fashion", icon: Shirt },
   { name: "Accessories", icon: Watch },
-];
-
-const DEMO_PRODUCTS: Product[] = [
-  {
-    id: "demo-1",
-    title: "iPhone 13 • 128GB (Starlight White)",
-    price: 28500,
-    isNegotiable: true,
-    category: "Mobiles",
-    condition: "Like New",
-    location: "Connaught Place, Delhi",
-    description:
-      "Original box, bill & charging cable available. Battery health 87%. Scratchless condition, tempered glass installed from day 1.",
-    images: [
-      "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=900&q=85",
-      "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?auto=format&fit=crop&w=900&q=85",
-    ],
-    seller: "Tech Store Delhi",
-    sellerRating: 4.8,
-    phone: "9876543210",
-    isFeatured: true,
-    createdAt: Date.now() - 1000 * 60 * 35,
-  },
-  {
-    id: "demo-2",
-    title: "Royal Enfield Classic 350 - Stealth Black",
-    price: 125000,
-    isNegotiable: false,
-    category: "Vehicles",
-    condition: "Good",
-    location: "Sector 29, Gurugram",
-    description:
-      "Single owner, 2021 model, 16,500 kms driven. Regularly serviced at authorized showroom. Both keys available, insurance valid till next year.",
-    images: [
-      "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=900&q=85",
-    ],
-    seller: "Aman Sharma",
-    sellerRating: 4.9,
-    phone: "9811122233",
-    isFeatured: true,
-    createdAt: Date.now() - 1000 * 60 * 120,
-  },
-  {
-    id: "demo-3",
-    title: "Minimalist Wooden Study & Work Desk",
-    price: 3499,
-    isNegotiable: true,
-    category: "Furniture",
-    condition: "Like New",
-    location: "Rohini, Delhi",
-    description:
-      "Ergonomic engineered wood study table with side book shelves. Moving out of Delhi, so selling quickly.",
-    images: [
-      "https://images.unsplash.com/photo-1499933374294-4584851497cc?auto=format&fit=crop&w=900&q=85",
-    ],
-    seller: "Rohit Verma",
-    sellerRating: 4.6,
-    phone: "",
-    createdAt: Date.now() - 1000 * 60 * 300,
-  },
-  {
-    id: "demo-4",
-    title: "HP Pavilion Gaming Laptop (Ryzen 5 / 16GB / RTX 3050)",
-    price: 42000,
-    isNegotiable: true,
-    category: "Electronics",
-    condition: "Good",
-    location: "Sector 62, Noida",
-    description:
-      "Smooth performance for editing and coding. Upgraded to 16GB RAM. 512GB NVMe SSD, original 150W charger included.",
-    images: [
-      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=85",
-    ],
-    seller: "Digital Hub",
-    sellerRating: 4.7,
-    phone: "9899001122",
-    createdAt: Date.now() - 1000 * 60 * 500,
-  },
-  {
-    id: "demo-5",
-    title: "Nike Air Jordan Retro High (Size UK 9)",
-    price: 4200,
-    isNegotiable: false,
-    category: "Fashion",
-    condition: "Brand New",
-    location: "Saket, Delhi",
-    description:
-      "Brand new with tags, unopened box. Bought from retail store, selling because size is slightly big.",
-    images: [
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=85",
-    ],
-    seller: "Sneaker Head",
-    sellerRating: 5.0,
-    phone: "",
-    createdAt: Date.now() - 1000 * 60 * 700,
-  },
-  {
-    id: "demo-6",
-    title: "Canon EOS 200D II DSLR with 18-55mm STM Lens",
-    price: 36000,
-    isNegotiable: true,
-    category: "Electronics",
-    condition: "Like New",
-    location: "Faridabad",
-    description:
-      "Barely 2,000 shutter count! Perfect camera for YouTube, 4K video & portrait photography. Includes bag, strap, battery and 64GB SD card.",
-    images: [
-      "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=85",
-    ],
-    seller: "Karan Lens World",
-    sellerRating: 4.9,
-    phone: "9871100223",
-    isFeatured: true,
-    createdAt: Date.now() - 1000 * 60 * 1200,
-  },
 ];
 
 const money = (value: number) =>
@@ -229,10 +120,11 @@ const formatTime = (timestamp: number) => {
 
 export default function SeldolMarketplace() {
   const [page, setPage] = useState<PageName>("home");
-  const [products, setProducts] = useState<Product[]>(DEMO_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -247,7 +139,7 @@ export default function SeldolMarketplace() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [notice, setNotice] = useState("");
 
-  // Sell Item Form
+  // Sell Form State
   const [newTitle, setNewTitle] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [newNegotiable, setNewNegotiable] = useState(true);
@@ -260,38 +152,34 @@ export default function SeldolMarketplace() {
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [isPublishing, setIsPublishing] = useState(false);
 
-  // Supabase Auth Session
+  // Authenticated User State
   const [user, setUser] = useState<any>(null);
-  const [profileName, setProfileName] = useState("Guest User");
-  const [profileCity, setProfileCity] = useState("Delhi, India");
+  const [profileName, setProfileName] = useState("Guest");
   const [profilePhone, setProfilePhone] = useState("");
 
-  // In-app Realtime / Simulated Chat
+  // Real Realtime Chat State
   const [chatProduct, setChatProduct] = useState<Product | null>(null);
   const [chatText, setChatText] = useState("");
-  const [chatMessages, setChatMessages] = useState<
-    { id: string; productId: string; sender: string; text: string; time: number }[]
-  >([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [sendingMsg, setSendingMsg] = useState(false);
 
-  // 1. Check Supabase Session & Load DB listings
+  // 1. Session & Live Data Fetching
   useEffect(() => {
     let active = true;
 
-    async function initSession() {
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (active && data?.session?.user) {
-          const u = data.session.user;
-          setUser(u);
-          setProfileName(u.user_metadata?.full_name || u.email?.split("@")[0] || "SELDOL Member");
-          setProfilePhone(u.user_metadata?.phone || "");
-        }
-      } catch (err) {
-        console.error("Auth check error:", err);
+    async function initUser() {
+      const { data } = await supabase.auth.getSession();
+      if (active && data?.session?.user) {
+        const u = data.session.user;
+        setUser(u);
+        setProfileName(u.user_metadata?.full_name || u.email?.split("@")[0] || "SELDOL Member");
+        setProfilePhone(u.user_metadata?.phone || "");
+        fetchWishlist(u.id);
       }
     }
 
-    void initSession();
+    void initUser();
+    void fetchLiveProducts();
 
     const {
       data: { subscription },
@@ -302,50 +190,12 @@ export default function SeldolMarketplace() {
         setUser(u);
         setProfileName(u.user_metadata?.full_name || u.email?.split("@")[0] || "SELDOL Member");
         setProfilePhone(u.user_metadata?.phone || "");
+        fetchWishlist(u.id);
       } else {
         setUser(null);
-        setProfileName("Guest User");
-        setProfilePhone("");
+        setFavorites([]);
       }
     });
-
-    // Fetch live listings from Supabase products table
-    async function loadCloudProducts() {
-      try {
-        const { data, error } = await supabase
-          .from("products")
-          .select("*, profiles(full_name, phone, city)")
-          .order("created_at", { ascending: false });
-
-        if (!error && data && data.length > 0) {
-          const formatted: Product[] = data.map((item: any) => ({
-            id: item.id,
-            userId: item.user_id,
-            title: item.title,
-            price: Number(item.price),
-            isNegotiable: item.is_negotiable,
-            category: item.category,
-            condition: item.condition,
-            location: item.location,
-            description: item.description || "",
-            images: item.images && item.images.length > 0 ? item.images : [
-              "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=900&q=85"
-            ],
-            seller: item.profiles?.full_name || "SELDOL Member",
-            sellerRating: 4.9,
-            phone: item.profiles?.phone || "",
-            isFeatured: false,
-            createdAt: new Date(item.created_at).getTime(),
-          }));
-
-          setProducts([...formatted, ...DEMO_PRODUCTS]);
-        }
-      } catch (err) {
-        console.log("Using cached/demo products", err);
-      }
-    }
-
-    void loadCloudProducts();
 
     return () => {
       active = false;
@@ -353,22 +203,97 @@ export default function SeldolMarketplace() {
     };
   }, []);
 
-  // 2. Load LocalStorage Fallbacks
-  useEffect(() => {
+  // 2. Fetch Real Listings from Supabase
+  async function fetchLiveProducts() {
+    setLoadingProducts(true);
     try {
-      const savedFavorites = localStorage.getItem("seldol_favorites_v3");
-      const savedChats = localStorage.getItem("seldol_chats_v3");
+      const { data, error } = await supabase
+        .from("products")
+        .select("*, profiles(full_name, phone, city)")
+        .order("created_at", { ascending: false });
 
-      if (savedFavorites) {
-        setFavorites(JSON.parse(savedFavorites) as string[]);
+      if (error) throw error;
+
+      if (data) {
+        const formatted: Product[] = data.map((item: any) => ({
+          id: item.id,
+          userId: item.user_id,
+          title: item.title,
+          price: Number(item.price),
+          isNegotiable: Boolean(item.is_negotiable),
+          category: item.category,
+          condition: item.condition,
+          location: item.location,
+          description: item.description || "",
+          images:
+            item.images && item.images.length > 0
+              ? item.images
+              : ["https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=900&q=85"],
+          seller: item.profiles?.full_name || "SELDOL Seller",
+          sellerRating: 4.9,
+          phone: item.profiles?.phone || "",
+          createdAt: new Date(item.created_at).getTime(),
+        }));
+        setProducts(formatted);
       }
-      if (savedChats) {
-        setChatMessages(JSON.parse(savedChats));
-      }
-    } catch {
-      // safe fallback
+    } catch (err: any) {
+      console.error("Fetch products error:", err.message);
+    } finally {
+      setLoadingProducts(false);
     }
-  }, []);
+  }
+
+  // 3. Fetch User Wishlist from Supabase
+  async function fetchWishlist(userId: string) {
+    try {
+      const { data } = await supabase
+        .from("wishlists")
+        .select("product_id")
+        .eq("user_id", userId);
+
+      if (data) {
+        setFavorites(data.map((w: any) => w.product_id));
+      }
+    } catch (err) {
+      console.error("Wishlist fetch error:", err);
+    }
+  }
+
+  // 4. Realtime Chat Listener
+  useEffect(() => {
+    if (!chatProduct || !user) return;
+
+    // Load initial messages between participants for this product
+    supabase
+      .from("messages")
+      .select("*")
+      .eq("product_id", chatProduct.id)
+      .order("created_at", { ascending: true })
+      .then(({ data }) => {
+        if (data) setMessages(data as ChatMessage[]);
+      });
+
+    // Realtime channel listener
+    const channel = supabase
+      .channel(`chat_${chatProduct.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `product_id=eq.${chatProduct.id}`,
+        },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new as ChatMessage]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [chatProduct, user]);
 
   useEffect(() => {
     if (!notice) return;
@@ -376,9 +301,7 @@ export default function SeldolMarketplace() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
-  const ownProducts = products.filter(
-    (p) => (user && p.userId === user.id) || p.seller === profileName
-  );
+  const ownProducts = products.filter((p) => user && p.userId === user.id);
 
   const filteredProducts = useMemo(() => {
     let result = [...products];
@@ -420,19 +343,23 @@ export default function SeldolMarketplace() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const toggleFavorite = (productId: string) => {
-    const updated = favorites.includes(productId)
-      ? favorites.filter((id) => id !== productId)
-      : [...favorites, productId];
+  const toggleFavorite = async (productId: string) => {
+    if (!user) {
+      setNotice("Please log in to save favorites!");
+      return;
+    }
 
-    setFavorites(updated);
-    try {
-      localStorage.setItem("seldol_favorites_v3", JSON.stringify(updated));
-    } catch {}
+    const isFav = favorites.includes(productId);
 
-    setNotice(
-      updated.includes(productId) ? "Added to Wishlist ❤️" : "Removed from Wishlist"
-    );
+    if (isFav) {
+      setFavorites((prev) => prev.filter((id) => id !== productId));
+      await supabase.from("wishlists").delete().match({ user_id: user.id, product_id: productId });
+      setNotice("Removed from Wishlist");
+    } else {
+      setFavorites((prev) => [...prev, productId]);
+      await supabase.from("wishlists").insert({ user_id: user.id, product_id: productId });
+      setNotice("Saved to Wishlist ❤️");
+    }
   };
 
   const openProduct = (product: Product) => {
@@ -447,14 +374,13 @@ export default function SeldolMarketplace() {
     if (!files || files.length === 0) return;
 
     if (uploadFiles.length + files.length > 5) {
-      setNotice("You can upload a maximum of 5 images");
+      setNotice("Maximum 5 photos allowed!");
       return;
     }
 
     const newFiles = Array.from(files);
     setUploadFiles((prev) => [...prev, ...newFiles]);
 
-    // Local previews
     newFiles.forEach((file) => {
       const url = URL.createObjectURL(file);
       setPreviewImages((prev) => [...prev, url]);
@@ -466,16 +392,17 @@ export default function SeldolMarketplace() {
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Real Upload & Post Ad Function
   const handleSell = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!user) {
-      setNotice("Please log in first to publish an ad!");
+      setNotice("Please sign in first to publish an ad!");
       return;
     }
 
     if (!newTitle.trim() || !newPrice || !newLocation.trim()) {
-      setNotice("Please fill in all required fields!");
+      setNotice("Please fill in required fields!");
       return;
     }
 
@@ -488,34 +415,34 @@ export default function SeldolMarketplace() {
     setIsPublishing(true);
 
     try {
-      const uploadedUrls: string[] = [];
+      const uploadedImageUrls: string[] = [];
 
-      // 1. Upload files to Supabase Storage if available
+      // 1. Upload files to Supabase Storage bucket 'product-images'
       for (const file of uploadFiles) {
         const fileExt = file.name.split(".").pop();
-        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const cleanName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-        const { error: uploadErr } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from("product-images")
-          .upload(fileName, file);
+          .upload(cleanName, file, { cacheControl: "3600", upsert: false });
 
-        if (!uploadErr) {
-          const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
-          uploadedUrls.push(data.publicUrl);
+        if (uploadError) {
+          console.error("Storage upload error:", uploadError);
+        } else {
+          const { data } = supabase.storage.from("product-images").getPublicUrl(cleanName);
+          uploadedImageUrls.push(data.publicUrl);
         }
       }
 
       const finalImages =
-        uploadedUrls.length > 0
-          ? uploadedUrls
-          : previewImages.length > 0
-          ? previewImages
+        uploadedImageUrls.length > 0
+          ? uploadedImageUrls
           : [
               "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=900&q=85",
             ];
 
-      // 2. Insert to Supabase DB
-      const { data: insertedData, error: insertError } = await supabase
+      // 2. Insert into Supabase 'products' table
+      const { data: newRecord, error: insertError } = await supabase
         .from("products")
         .insert({
           user_id: user.id,
@@ -531,48 +458,28 @@ export default function SeldolMarketplace() {
         .select("*, profiles(full_name, phone, city)")
         .single();
 
-      let newProduct: Product;
+      if (insertError) throw insertError;
 
-      if (!insertError && insertedData) {
-        newProduct = {
-          id: insertedData.id,
-          userId: insertedData.user_id,
-          title: insertedData.title,
-          price: Number(insertedData.price),
-          isNegotiable: insertedData.is_negotiable,
-          category: insertedData.category,
-          condition: insertedData.condition,
-          location: insertedData.location,
-          description: insertedData.description,
-          images: insertedData.images,
-          seller: profileName,
-          sellerRating: 5.0,
-          phone: newPhone.trim() || profilePhone,
-          isFeatured: false,
-          createdAt: Date.now(),
-        };
-      } else {
-        // Local fallback if table doesn't exist yet
-        newProduct = {
-          id: `local-${Date.now()}`,
-          userId: user.id,
-          title: newTitle.trim(),
-          price: priceNum,
-          isNegotiable: newNegotiable,
-          category: newCategory,
-          condition: newCondition,
-          location: newLocation.trim(),
-          description: newDescription.trim() || "No detailed description provided.",
-          images: finalImages,
-          seller: profileName,
-          sellerRating: 5.0,
-          phone: newPhone.trim() || profilePhone,
-          isFeatured: false,
-          createdAt: Date.now(),
-        };
-      }
+      const createdProduct: Product = {
+        id: newRecord.id,
+        userId: newRecord.user_id,
+        title: newRecord.title,
+        price: Number(newRecord.price),
+        isNegotiable: Boolean(newRecord.is_negotiable),
+        category: newRecord.category,
+        condition: newRecord.condition,
+        location: newRecord.location,
+        description: newRecord.description,
+        images: newRecord.images,
+        seller: profileName,
+        sellerRating: 5.0,
+        phone: newPhone.trim() || profilePhone,
+        createdAt: Date.now(),
+      };
 
-      setProducts([newProduct, ...products]);
+      setProducts((prev) => [createdProduct, ...prev]);
+
+      // Reset form
       setNewTitle("");
       setNewPrice("");
       setNewLocation("");
@@ -581,77 +488,69 @@ export default function SeldolMarketplace() {
       setUploadFiles([]);
       setPreviewImages([]);
 
-      setSelectedProduct(newProduct);
+      setSelectedProduct(createdProduct);
       setPage("details");
-      setNotice("Ad published successfully to SELDOL! 🎉");
+      setNotice("Ad published successfully to cloud! 🎉");
     } catch (err: any) {
-      setNotice(err?.message || "Failed to publish listing.");
+      alert("Publishing error: " + err.message);
     } finally {
       setIsPublishing(false);
     }
   };
 
   const deleteProduct = async (id: string) => {
-    if (!id.startsWith("demo-")) {
-      await supabase.from("products").delete().eq("id", id);
+    try {
+      const { error } = await supabase.from("products").delete().eq("id", id);
+      if (error) throw error;
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      setNotice("Ad deleted successfully from database.");
+    } catch (err: any) {
+      alert("Delete failed: " + err.message);
     }
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-    setNotice("Listing removed");
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
-    setProfileName("Guest User");
-    setNotice("You have logged out.");
+    setFavorites([]);
+    setNotice("Logged out.");
     showPage("home");
   };
 
   const startChat = (product: Product) => {
+    if (!user) {
+      setNotice("Please log in to chat with the seller!");
+      return;
+    }
     setChatProduct(product);
     setPage("messages");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const sendChat = (e: FormEvent) => {
+  // Real Send Message Function
+  const sendChat = async (e: FormEvent) => {
     e.preventDefault();
-    if (!chatText.trim() || !chatProduct) return;
+    if (!chatText.trim() || !chatProduct || !user || sendingMsg) return;
 
-    const userMsg = {
-      id: `msg-${Date.now()}`,
-      productId: chatProduct.id,
-      sender: profileName,
-      text: chatText.trim(),
-      time: Date.now(),
-    };
-
-    const updated = [...chatMessages, userMsg];
-    setChatMessages(updated);
+    setSendingMsg(true);
+    const content = chatText.trim();
     setChatText("");
 
-    // Simulate smart seller response
-    setTimeout(() => {
-      const sellerReplies = [
-        "Yes, it is available! When would you like to inspect it?",
-        "Price is slightly negotiable if you pick it up today.",
-        "Sure! You can check the condition in person anytime after 5 PM.",
-      ];
-      const randomReply =
-        sellerReplies[Math.floor(Math.random() * sellerReplies.length)];
-
-      const replyMsg = {
-        id: `reply-${Date.now()}`,
-        productId: chatProduct.id,
-        sender: chatProduct.seller,
-        text: randomReply,
-        time: Date.now(),
-      };
-      setChatMessages((prev) => [...prev, replyMsg]);
-    }, 1200);
-
     try {
-      localStorage.setItem("seldol_chats_v3", JSON.stringify(updated));
-    } catch {}
+      const { error } = await supabase.from("messages").insert({
+        product_id: chatProduct.id,
+        sender_id: user.id,
+        receiver_id: chatProduct.userId,
+        content: content,
+      });
+
+      if (error) throw error;
+    } catch (err: any) {
+      console.error("Message send error:", err);
+      setNotice("Failed to send message: " + err.message);
+    } finally {
+      setSendingMsg(false);
+    }
   };
 
   const startWhatsApp = (product: Product) => {
@@ -688,7 +587,6 @@ export default function SeldolMarketplace() {
       {/* Main Header */}
       <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          {/* Logo */}
           <button
             onClick={() => showPage("home")}
             className="group flex items-center gap-2.5 text-left focus:outline-none"
@@ -706,7 +604,7 @@ export default function SeldolMarketplace() {
             </div>
           </button>
 
-          {/* Quick Search Header (Desktop) */}
+          {/* Quick Search */}
           <div className="hidden max-w-lg flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2 transition focus-within:border-violet-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-violet-100 md:flex">
             <Search size={18} className="text-slate-400" />
             <input
@@ -726,7 +624,7 @@ export default function SeldolMarketplace() {
             )}
           </div>
 
-          {/* Desktop Actions */}
+          {/* Desktop Nav Items */}
           <div className="hidden items-center gap-2 md:flex">
             <button
               onClick={() => showPage("wishlist")}
@@ -754,7 +652,7 @@ export default function SeldolMarketplace() {
               className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
             >
               <Package size={17} className="text-violet-600" />
-              <span>My Ads</span>
+              <span>My Ads ({ownProducts.length})</span>
             </button>
 
             {user ? (
@@ -850,9 +748,9 @@ export default function SeldolMarketplace() {
         )}
       </header>
 
-      {/* Main Body */}
+      {/* Main Feed Container */}
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-        {/* ===================== HOME PAGE ===================== */}
+        {/* ===================== HOME FEED ===================== */}
         {page === "home" && (
           <div className="space-y-8">
             {!search && category === "All" && !location && (
@@ -893,7 +791,7 @@ export default function SeldolMarketplace() {
               </div>
             )}
 
-            {/* Categories Carousel */}
+            {/* Categories */}
             <div>
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-base font-black tracking-tight text-slate-900 sm:text-lg">
@@ -930,7 +828,7 @@ export default function SeldolMarketplace() {
               </div>
             </div>
 
-            {/* Filter & Search Bar */}
+            {/* Filters */}
             <div id="browse-section" className="space-y-4">
               <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
                 <div className="flex flex-1 flex-col gap-3 sm:flex-row">
@@ -1039,8 +937,13 @@ export default function SeldolMarketplace() {
                 )}
               </div>
 
-              {/* Feed */}
-              {filteredProducts.length === 0 ? (
+              {/* Real Listing Grid */}
+              {loadingProducts ? (
+                <div className="flex flex-col items-center justify-center p-16 text-slate-400">
+                  <Loader2 size={32} className="animate-spin text-violet-600" />
+                  <p className="mt-3 text-xs font-bold">Loading live listings...</p>
+                </div>
+              ) : filteredProducts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
                   <Package size={48} className="text-slate-300" />
                   <h3 className="mt-4 text-base font-bold text-slate-800">No items match your criteria</h3>
@@ -1182,7 +1085,7 @@ export default function SeldolMarketplace() {
                       </h1>
                       {selectedProduct.isNegotiable && (
                         <span className="text-xs font-semibold text-emerald-600">
-                          ✓ Price is slightly negotiable
+                          ✓ Price is negotiable
                         </span>
                       )}
                     </div>
@@ -1208,7 +1111,6 @@ export default function SeldolMarketplace() {
                     <span>{selectedProduct.location}</span>
                   </div>
 
-                  {/* Seller Card */}
                   <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
                     <div className="flex items-center gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-indigo-600 text-lg font-black text-white">
@@ -1224,7 +1126,7 @@ export default function SeldolMarketplace() {
                         <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
                           <span className="flex items-center text-amber-500 font-bold">
                             <Star size={12} fill="currentColor" className="mr-0.5" />
-                            {selectedProduct.sellerRating || 4.8}
+                            {selectedProduct.sellerRating || 4.9}
                           </span>
                           <span>•</span>
                           <span>Verified Seller</span>
@@ -1233,9 +1135,8 @@ export default function SeldolMarketplace() {
                     </div>
                   </div>
 
-                  {/* CTAs */}
                   <div className="space-y-2.5">
-                    {selectedProduct.seller !== profileName && (
+                    {(!user || user.id !== selectedProduct.userId) && (
                       <button
                         onClick={() => startChat(selectedProduct)}
                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-700 active:scale-95"
@@ -1324,12 +1225,11 @@ export default function SeldolMarketplace() {
                 <div>
                   <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Post Free Advertisement</h1>
                   <p className="mt-1 text-xs text-slate-500">
-                    Reach thousands of buyers across your city.
+                    Your photos will be hosted securely on Supabase Storage.
                   </p>
                 </div>
 
                 <form onSubmit={handleSell} className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-                  {/* Photo Upload Area */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
                       Upload Photos (Max 5)
@@ -1364,7 +1264,6 @@ export default function SeldolMarketplace() {
                     </div>
                   </div>
 
-                  {/* Title & Category */}
                   <div className="space-y-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-700">Ad Title *</label>
@@ -1484,9 +1383,15 @@ export default function SeldolMarketplace() {
                   <button
                     type="submit"
                     disabled={isPublishing}
-                    className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-violet-600/25 transition hover:brightness-105 active:scale-95 disabled:opacity-50"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-violet-600/25 transition hover:brightness-105 active:scale-95 disabled:opacity-50"
                   >
-                    {isPublishing ? "Uploading & Publishing..." : "Post Advertisement Now"}
+                    {isPublishing ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" /> Uploading to Supabase...
+                      </>
+                    ) : (
+                      "Post Advertisement Now"
+                    )}
                   </button>
                 </form>
               </>
@@ -1499,9 +1404,9 @@ export default function SeldolMarketplace() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">My Listings</h1>
+                <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">My Cloud Listings</h1>
                 <p className="mt-1 text-xs text-slate-500">
-                  Manage the items you've posted on SELDOL.
+                  Ads associated with your verified account.
                 </p>
               </div>
               <button
@@ -1515,8 +1420,8 @@ export default function SeldolMarketplace() {
             {ownProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
                 <Package size={48} className="text-slate-300" />
-                <h3 className="mt-4 text-base font-bold text-slate-800">You haven't posted any ads yet</h3>
-                <p className="mt-1 text-xs text-slate-500">Turn your unused electronics, vehicles, or items into quick cash.</p>
+                <h3 className="mt-4 text-base font-bold text-slate-800">No active ads posted by you</h3>
+                <p className="mt-1 text-xs text-slate-500">Post your unused electronics, gadgets, or vehicles online.</p>
                 <button
                   onClick={() => showPage("sell")}
                   className="mt-5 rounded-xl bg-violet-600 px-5 py-2.5 text-xs font-bold text-white"
@@ -1539,7 +1444,7 @@ export default function SeldolMarketplace() {
                       />
                       <div>
                         <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                          Active Listing
+                          Active in Supabase
                         </span>
                         <h4 className="mt-1 text-sm font-bold text-slate-900">{item.title}</h4>
                         <p className="mt-0.5 text-base font-black text-violet-600">{money(item.price)}</p>
@@ -1576,7 +1481,7 @@ export default function SeldolMarketplace() {
             <div>
               <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Saved Wishlist</h1>
               <p className="mt-1 text-xs text-slate-500">
-                Items you've bookmarked for later consideration.
+                Synced with your account across all devices.
               </p>
             </div>
 
@@ -1584,7 +1489,7 @@ export default function SeldolMarketplace() {
               <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
                 <Heart size={44} className="text-slate-300" />
                 <h3 className="mt-4 text-base font-bold text-slate-800">Your wishlist is empty</h3>
-                <p className="mt-1 text-xs text-slate-500">Click the heart icon on any ad to keep it here.</p>
+                <p className="mt-1 text-xs text-slate-500">Click the heart icon on any ad to bookmark it.</p>
                 <button
                   onClick={() => showPage("home")}
                   className="mt-5 rounded-xl bg-violet-600 px-5 py-2.5 text-xs font-bold text-white"
@@ -1610,13 +1515,13 @@ export default function SeldolMarketplace() {
           </div>
         )}
 
-        {/* ===================== MESSAGES (CHAT) ===================== */}
+        {/* ===================== REALTIME CHAT ===================== */}
         {page === "messages" && (
           <div className="space-y-6">
             <div>
-              <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Direct In-App Messages</h1>
+              <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Direct Realtime Messages</h1>
               <p className="mt-1 text-xs text-slate-500">
-                Chat securely with sellers and buyers in real-time.
+                Live Supabase WebSocket communication with sellers and buyers.
               </p>
             </div>
 
@@ -1628,7 +1533,7 @@ export default function SeldolMarketplace() {
                   </h3>
                 </div>
                 <div className="divide-y divide-slate-100">
-                  {products.slice(0, 4).map((p) => (
+                  {products.slice(0, 5).map((p) => (
                     <button
                       key={p.id}
                       onClick={() => setChatProduct(p)}
@@ -1640,7 +1545,7 @@ export default function SeldolMarketplace() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between">
                           <p className="truncate text-xs font-bold text-slate-900">{p.seller}</p>
-                          <span className="text-[10px] text-slate-400">Online</span>
+                          <span className="text-[10px] text-emerald-600 font-bold">Online</span>
                         </div>
                         <p className="truncate text-[11px] text-slate-500">{p.title}</p>
                       </div>
@@ -1676,62 +1581,60 @@ export default function SeldolMarketplace() {
 
                     <div className="flex-1 space-y-3 overflow-y-auto p-4 max-h-[350px]">
                       <div className="rounded-xl bg-violet-50 p-3 text-center text-[11px] text-violet-800">
-                        🔒 Safe Chat initiated for <strong>{chatProduct.title}</strong>. Never send advance money before checking the item.
+                        ⚡ Realtime Chat connected for <strong>{chatProduct.title}</strong>.
                       </div>
 
-                      {chatMessages
-                        .filter((m) => m.productId === chatProduct.id)
-                        .map((msg) => {
-                          const isMe = msg.sender === profileName;
-                          return (
+                      {messages.map((msg) => {
+                        const isMe = user && msg.sender_id === user.id;
+                        return (
+                          <div
+                            key={msg.id}
+                            className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                          >
                             <div
-                              key={msg.id}
-                              className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                              className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-xs ${
+                                isMe
+                                  ? "rounded-br-none bg-violet-600 text-white"
+                                  : "rounded-bl-none bg-slate-100 text-slate-800"
+                              }`}
                             >
-                              <div
-                                className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-xs ${
-                                  isMe
-                                    ? "rounded-br-none bg-violet-600 text-white"
-                                    : "rounded-bl-none bg-slate-100 text-slate-800"
+                              <p className="leading-relaxed">{msg.content}</p>
+                              <span
+                                className={`mt-1 block text-[9px] ${
+                                  isMe ? "text-violet-200 text-right" : "text-slate-400"
                                 }`}
                               >
-                                <p className="leading-relaxed">{msg.text}</p>
-                                <span
-                                  className={`mt-1 block text-[9px] ${
-                                    isMe ? "text-violet-200 text-right" : "text-slate-400"
-                                  }`}
-                                >
-                                  {new Date(msg.time).toLocaleTimeString([], {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </span>
-                              </div>
+                                {new Date(msg.created_at).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
                             </div>
-                          );
-                        })}
+                          </div>
+                        );
+                      })}
                     </div>
 
                     <form onSubmit={sendChat} className="flex gap-2 border-t border-slate-100 p-3">
                       <input
                         value={chatText}
                         onChange={(e) => setChatText(e.target.value)}
-                        placeholder="Type message to seller..."
+                        placeholder="Type realtime message to seller..."
                         className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs outline-none focus:border-violet-500 focus:bg-white"
                       />
                       <button
                         type="submit"
-                        disabled={!chatText.trim()}
+                        disabled={!chatText.trim() || sendingMsg}
                         className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 text-white transition hover:bg-violet-700 disabled:opacity-40"
                       >
-                        <Send size={16} />
+                        {sendingMsg ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                       </button>
                     </form>
                   </>
                 ) : (
                   <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-slate-400">
                     <MessageCircle size={36} />
-                    <p className="mt-2 text-xs font-semibold">Select an item conversation from the left.</p>
+                    <p className="mt-2 text-xs font-semibold">Select an item conversation from the left to start live chat.</p>
                   </div>
                 )}
               </div>
@@ -1745,7 +1648,7 @@ export default function SeldolMarketplace() {
             <div>
               <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">My Account</h1>
               <p className="mt-1 text-xs text-slate-500">
-                Your authenticated profile details on SELDOL.
+                Your authenticated profile details in Supabase.
               </p>
             </div>
 
@@ -1771,11 +1674,11 @@ export default function SeldolMarketplace() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700">Contact Number</label>
+                <label className="block text-xs font-bold text-slate-700">Phone</label>
                 <input
                   type="text"
                   disabled
-                  value={profilePhone || "Not provided"}
+                  value={profilePhone || "Not specified"}
                   className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-xs font-semibold text-slate-600 outline-none"
                 />
               </div>
@@ -1786,73 +1689,13 @@ export default function SeldolMarketplace() {
                   onClick={handleLogout}
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 py-3 text-xs font-bold text-rose-600 transition hover:bg-rose-100"
                 >
-                  <LogOut size={16} /> Sign Out of Account
+                  <LogOut size={16} /> Sign Out of SELDOL
                 </button>
               </div>
             </div>
           </div>
         )}
       </main>
-
-      {/* Mobile Bottom Floating Nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-slate-200 bg-white/95 py-2 backdrop-blur-lg md:hidden">
-        {[
-          { label: "Home", p: "home" as PageName, icon: LayoutGrid },
-          { label: "Wishlist", p: "wishlist" as PageName, icon: Heart, count: favorites.length },
-          { label: "Sell", p: "sell" as PageName, icon: Plus, isAction: true },
-          { label: "Chats", p: "messages" as PageName, icon: MessageCircle },
-          { label: "Profile", p: user ? ("profile" as PageName) : null, href: user ? null : "/login/", icon: UserRound },
-        ].map((item) => {
-          const Icon = item.icon;
-          const isActive = item.p ? page === item.p : false;
-
-          if (item.isAction) {
-            return (
-              <button
-                key={item.label}
-                onClick={() => showPage(item.p!)}
-                className="flex flex-col items-center justify-center text-[10px] font-bold text-white"
-              >
-                <div className="flex h-10 w-10 -translate-y-2 items-center justify-center rounded-full bg-violet-600 shadow-lg shadow-violet-600/30">
-                  <Icon size={20} strokeWidth={3} />
-                </div>
-                <span className="-translate-y-1 text-slate-800">{item.label}</span>
-              </button>
-            );
-          }
-
-          if (item.href) {
-            return (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="flex flex-col items-center justify-center text-[10px] font-bold text-slate-400"
-              >
-                <Icon size={20} />
-                <span className="mt-1">{item.label}</span>
-              </Link>
-            );
-          }
-
-          return (
-            <button
-              key={item.label}
-              onClick={() => showPage(item.p!)}
-              className={`relative flex flex-col items-center justify-center text-[10px] font-bold transition ${
-                isActive ? "text-violet-600" : "text-slate-400"
-              }`}
-            >
-              <Icon size={20} />
-              <span className="mt-1">{item.label}</span>
-              {Boolean(item.count) && (
-                <span className="absolute -top-1 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white">
-                  {item.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
 
       {/* Floating Global Toast */}
       {notice && (
@@ -1865,7 +1708,7 @@ export default function SeldolMarketplace() {
   );
 }
 
-// ----------------- SUB COMPONENTS -----------------
+// ----------------- CARDS -----------------
 
 function ProductGridCard({
   product,
