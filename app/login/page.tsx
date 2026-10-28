@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { ShoppingBag } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 type AuthMode = "login" | "signup";
@@ -143,11 +144,17 @@ export default function LoginPage() {
       <div className="auth-glow auth-glow-one" />
       <div className="auth-glow auth-glow-two" />
 
+      {/* Identical Header Logo from Home Page */}
       <Link className="auth-brand" href="/">
-        <span className="brand-mark">S</span>
-        <span>
-          SEL<span className="brand-highlight">DOL</span>
-        </span>
+        <div className="brand-icon-box">
+          <ShoppingBag size={22} strokeWidth={2.4} />
+        </div>
+        <div className="brand-text-box">
+          <span className="brand-name">
+            SEL<span className="brand-highlight">DOL</span>
+          </span>
+          <span className="brand-pro-badge">PRO</span>
+        </div>
       </Link>
 
       <section className="auth-card">
@@ -351,30 +358,51 @@ export default function LoginPage() {
         :global(.auth-brand) {
           display: flex;
           align-items: center;
-          gap: 10px;
-          font-size: 25px;
-          font-weight: 900;
-          letter-spacing: -1px;
-          margin-bottom: 30px;
+          gap: 12px;
+          margin-bottom: 28px;
           z-index: 1;
           text-decoration: none;
           color: inherit;
         }
 
-        .brand-mark {
-          display: grid;
-          place-items: center;
-          width: 42px;
-          height: 42px;
-          border-radius: 13px;
-          background: linear-gradient(135deg, #a78bfa, #06b6d4);
+        .brand-icon-box {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 44px;
+          height: 44px;
+          border-radius: 14px;
+          background: linear-gradient(135deg, #7c3aed, #4f46e5);
           color: white;
-          box-shadow: 0 8px 28px #7c3aed44;
+          box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
+        }
+
+        .brand-text-box {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .brand-name {
+          font-size: 26px;
+          font-weight: 900;
+          letter-spacing: -1.2px;
+          color: #ffffff;
         }
 
         .brand-highlight,
         h1 span {
-          color: #a78bfa;
+          color: #8b5cf6;
+        }
+
+        .brand-pro-badge {
+          background: rgba(139, 92, 246, 0.2);
+          color: #c4b5fd;
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: 0.5px;
+          padding: 2px 6px;
+          border-radius: 5px;
         }
 
         .auth-card {
