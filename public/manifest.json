@@ -1,0 +1,19 @@
+{
+  "name": "SELDOL — Buy Smart. Sell Easy.",
+  "short_name": "SELDOL",
+  "description": "India's second-hand marketplace",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f8fc",
+  "theme_color": "#111827",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
