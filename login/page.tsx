@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-
 
 type AuthMode = "login" | "signup";
 
@@ -21,11 +21,16 @@ export default function LoginPage() {
     let active = true;
 
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
+      try {
+        const { data, error: sessionErr } = await supabase.auth.getSession();
+        if (sessionErr) throw sessionErr;
 
-      if (active && data.session) {
-        setLoggedIn(true);
-        setUserEmail(data.session.user.email ?? "");
+        if (active && data?.session) {
+          setLoggedIn(true);
+          setUserEmail(data.session.user.email ?? "");
+        }
+      } catch (err: unknown) {
+        console.error("Session check failed:", err);
       }
     };
 
@@ -35,14 +40,13 @@ export default function LoginPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!active) return;
-
       setLoggedIn(Boolean(session));
-      setUserEmail(session?.user.email ?? "");
+      setUserEmail(session?.user?.email ?? "");
     });
 
     return () => {
       active = false;
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 
@@ -65,6 +69,11 @@ export default function LoginPage() {
           return;
         }
 
+        const redirectUrl =
+          typeof window !== "undefined"
+            ? `${window.location.origin}/seldol/login/`
+            : undefined;
+
         const { data, error: signupError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
@@ -72,7 +81,7 @@ export default function LoginPage() {
             data: {
               full_name: fullName.trim(),
             },
-            emailRedirectTo: `${window.location.origin}/seldol/login/`,
+            emailRedirectTo: redirectUrl,
           },
         });
 
@@ -97,13 +106,12 @@ export default function LoginPage() {
         if (loginError) throw loginError;
 
         setLoggedIn(true);
-        setUserEmail(data.user.email ?? email);
+        setUserEmail(data.user?.email ?? email);
         setMessage("Login successful! Welcome to SELDOL.");
       }
     } catch (err: unknown) {
       const text =
         err instanceof Error ? err.message : "Something went wrong.";
-
       setError(text);
     } finally {
       setLoading(false);
@@ -117,7 +125,6 @@ export default function LoginPage() {
 
     try {
       const { error: logoutError } = await supabase.auth.signOut();
-
       if (logoutError) throw logoutError;
 
       setLoggedIn(false);
@@ -125,9 +132,7 @@ export default function LoginPage() {
       setPassword("");
       setMessage("You have been logged out.");
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Unable to log out."
-      );
+      setError(err instanceof Error ? err.message : "Unable to log out.");
     } finally {
       setLoading(false);
     }
@@ -138,10 +143,12 @@ export default function LoginPage() {
       <div className="auth-glow auth-glow-one" />
       <div className="auth-glow auth-glow-two" />
 
-      <a className="auth-brand" href="/seldol/">
+      <Link className="auth-brand" href="/">
         <span className="brand-mark">S</span>
-        <span>SEL<span className="brand-highlight">DOL</span></span>
-      </a>
+        <span>
+          SEL<span className="brand-highlight">DOL</span>
+        </span>
+      </Link>
 
       <section className="auth-card">
         <div className="auth-badge">INDIA&apos;S SECOND-HAND MARKETPLACE</div>
@@ -150,9 +157,7 @@ export default function LoginPage() {
           <>
             <div className="auth-symbol">✓</div>
             <h1>You&apos;re signed in!</h1>
-            <p className="auth-description">
-              Welcome to your SELDOL account.
-            </p>
+            <p className="auth-description">Welcome to your SELDOL account.</p>
 
             <div className="account-box">
               <span className="account-label">SIGNED IN AS</span>
@@ -162,9 +167,9 @@ export default function LoginPage() {
             {message && <p className="success-message">{message}</p>}
             {error && <p className="error-message">{error}</p>}
 
-            <a className="primary-button" href="/seldol/">
+            <Link className="primary-button" href="/">
               Explore SELDOL
-            </a>
+            </Link>
 
             <button
               className="secondary-button"
@@ -178,9 +183,13 @@ export default function LoginPage() {
           <>
             <h1>
               {mode === "login" ? (
-                <>Welcome <span>back.</span></>
+                <>
+                  Welcome <span>back.</span>
+                </>
               ) : (
-                <>Join <span>SELDOL.</span></>
+                <>
+                  Join <span>SELDOL.</span>
+                </>
               )}
             </h1>
 
@@ -339,7 +348,7 @@ export default function LoginPage() {
           bottom: -100px;
         }
 
-        .auth-brand {
+        :global(.auth-brand) {
           display: flex;
           align-items: center;
           gap: 10px;
@@ -348,6 +357,8 @@ export default function LoginPage() {
           letter-spacing: -1px;
           margin-bottom: 30px;
           z-index: 1;
+          text-decoration: none;
+          color: inherit;
         }
 
         .brand-mark {
@@ -419,6 +430,7 @@ export default function LoginPage() {
           color: #a8b1c5;
           font-size: 13px;
           font-weight: 700;
+          cursor: pointer;
         }
 
         .auth-tabs button.active {
@@ -463,7 +475,7 @@ export default function LoginPage() {
           color: #68738b;
         }
 
-        .primary-button,
+        :global(.primary-button),
         .secondary-button {
           display: flex;
           justify-content: center;
@@ -476,9 +488,11 @@ export default function LoginPage() {
           font-weight: 800;
           text-align: center;
           cursor: pointer;
+          text-decoration: none;
+          box-sizing: border-box;
         }
 
-        .primary-button {
+        :global(.primary-button) {
           margin-top: 3px;
           border: 0;
           background: linear-gradient(100deg, #8b5cf6, #6366f1);
@@ -486,11 +500,11 @@ export default function LoginPage() {
           box-shadow: 0 8px 22px #7c3aed30;
         }
 
-        .primary-button:hover {
+        :global(.primary-button:hover) {
           filter: brightness(1.1);
         }
 
-        .primary-button:disabled,
+        :global(.primary-button:disabled),
         .secondary-button:disabled {
           opacity: 0.6;
           cursor: wait;
@@ -515,6 +529,7 @@ export default function LoginPage() {
           background: transparent;
           color: #c4b5fd;
           font-weight: 800;
+          cursor: pointer;
         }
 
         .error-message,
