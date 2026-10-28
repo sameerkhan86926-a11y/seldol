@@ -20,7 +20,6 @@ import {
   ChevronRight,
   ChevronLeft,
   X,
-  Camera,
   Upload,
   Smartphone,
   CarFront,
@@ -29,6 +28,7 @@ import {
   Shirt,
   Watch,
   LayoutGrid,
+  List,
   Package,
   ShoppingBag,
   ShieldCheck,
@@ -43,13 +43,14 @@ import {
   Clock3,
   IndianRupee,
   Settings,
-  LogOut,
   Star,
   BadgeCheck,
   ImagePlus,
   Zap,
   MessageSquare,
-  Bell,
+  Share2,
+  Filter,
+  Check,
   CircleUserRound,
 } from "lucide-react";
 
@@ -62,23 +63,29 @@ type PageName =
   | "messages"
   | "profile";
 
+type ItemCondition = "Brand New" | "Like New" | "Good" | "Fair";
+
 type Product = {
   id: string;
   title: string;
   price: number;
+  isNegotiable?: boolean;
   category: string;
+  condition: ItemCondition;
   location: string;
   description: string;
-  image: string;
+  images: string[];
   seller: string;
+  sellerRating?: number;
   phone: string;
+  isFeatured?: boolean;
   createdAt: number;
 };
 
 const CATEGORIES = [
   { name: "All", icon: LayoutGrid },
   { name: "Mobiles", icon: Smartphone },
-  { name: "Motorcycles", icon: CarFront },
+  { name: "Vehicles", icon: CarFront },
   { name: "Electronics", icon: Laptop },
   { name: "Furniture", icon: Armchair },
   { name: "Fashion", icon: Shirt },
@@ -88,115 +95,115 @@ const CATEGORIES = [
 const DEMO_PRODUCTS: Product[] = [
   {
     id: "demo-1",
-    title: "iPhone 13 • 128GB",
+    title: "iPhone 13 • 128GB (Starlight White)",
     price: 28500,
+    isNegotiable: true,
     category: "Mobiles",
-    location: "Delhi",
+    condition: "Like New",
+    location: "Connaught Place, Delhi",
     description:
-      "Well-maintained iPhone 13 with 128GB storage. Clean display, working cameras and Face ID. Box availability and battery health can be confirmed with the seller.",
-    image:
+      "Original box, bill & charging cable available. Battery health 87%. Scratchless condition, tempered glass installed from day 1.",
+    images: [
       "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=900&q=85",
-    seller: "Tech Store",
-    phone: "",
-    createdAt: Date.now() - 1000 * 60 * 30,
+      "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?auto=format&fit=crop&w=900&q=85",
+    ],
+    seller: "Tech Store Delhi",
+    sellerRating: 4.8,
+    phone: "9876543210",
+    isFeatured: true,
+    createdAt: Date.now() - 1000 * 60 * 35,
   },
   {
     id: "demo-2",
-    title: "Royal Enfield Classic 350",
+    title: "Royal Enfield Classic 350 - Stealth Black",
     price: 125000,
-    category: "Motorcycles",
-    location: "Gurugram",
+    isNegotiable: false,
+    category: "Vehicles",
+    condition: "Good",
+    location: "Sector 29, Gurugram",
     description:
-      "Pre-owned Royal Enfield Classic 350. Contact the seller for the model year, kilometres driven, service history and registration details.",
-    image:
+      "Single owner, 2021 model, 16,500 kms driven. Regularly serviced at authorized showroom. Both keys available, insurance valid till next year.",
+    images: [
       "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=900&q=85",
-    seller: "Aman",
-    phone: "",
-    createdAt: Date.now() - 1000 * 60 * 60 * 2,
+    ],
+    seller: "Aman Sharma",
+    sellerRating: 4.9,
+    phone: "9811122233",
+    isFeatured: true,
+    createdAt: Date.now() - 1000 * 60 * 120,
   },
   {
     id: "demo-3",
-    title: "Modern Study Table",
-    price: 3500,
+    title: "Minimalist Wooden Study & Work Desk",
+    price: 3499,
+    isNegotiable: true,
     category: "Furniture",
+    condition: "Like New",
     location: "Rohini, Delhi",
     description:
-      "A practical study table for home or office. Pre-owned, with a modern design. Ask the seller about dimensions and condition before purchasing.",
-    image:
+      "Ergonomic engineered wood study table with side book shelves. Moving out of Delhi, so selling quickly.",
+    images: [
       "https://images.unsplash.com/photo-1499933374294-4584851497cc?auto=format&fit=crop&w=900&q=85",
-    seller: "Rohit",
+    ],
+    seller: "Rohit Verma",
+    sellerRating: 4.6,
     phone: "",
-    createdAt: Date.now() - 1000 * 60 * 60 * 5,
+    createdAt: Date.now() - 1000 * 60 * 300,
   },
   {
     id: "demo-4",
-    title: "HP Pavilion Laptop",
-    price: 32000,
+    title: "HP Pavilion Gaming Laptop (Ryzen 5 / 16GB / RTX 3050)",
+    price: 42000,
+    isNegotiable: true,
     category: "Electronics",
-    location: "Noida",
+    condition: "Good",
+    location: "Sector 62, Noida",
     description:
-      "Pre-owned HP Pavilion laptop for everyday work and study. Contact the seller for the exact processor, RAM, storage, battery condition and warranty details.",
-    image:
+      "Smooth performance for editing and coding. Upgraded to 16GB RAM. 512GB NVMe SSD, original 150W charger included.",
+    images: [
       "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=85",
+    ],
     seller: "Digital Hub",
-    phone: "",
-    createdAt: Date.now() - 1000 * 60 * 60 * 8,
+    sellerRating: 4.7,
+    phone: "9899001122",
+    createdAt: Date.now() - 1000 * 60 * 500,
   },
   {
     id: "demo-5",
-    title: "Premium Everyday Sneakers",
-    price: 1200,
+    title: "Nike Air Jordan Retro High (Size UK 9)",
+    price: 4200,
+    isNegotiable: false,
     category: "Fashion",
-    location: "Delhi",
+    condition: "Brand New",
+    location: "Saket, Delhi",
     description:
-      "Pre-owned casual sneakers. Please confirm size, condition and any visible wear with the seller before making a deal.",
-    image:
+      "Brand new with tags, unopened box. Bought from retail store, selling because size is slightly big.",
+    images: [
       "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=85",
-    seller: "Fashion Finds",
+    ],
+    seller: "Sneaker Head",
+    sellerRating: 5.0,
     phone: "",
-    createdAt: Date.now() - 1000 * 60 * 60 * 12,
+    createdAt: Date.now() - 1000 * 60 * 700,
   },
   {
     id: "demo-6",
-    title: "Canon DSLR Camera",
-    price: 22000,
+    title: "Canon EOS 200D II DSLR with 18-55mm STM Lens",
+    price: 36000,
+    isNegotiable: true,
     category: "Electronics",
+    condition: "Like New",
     location: "Faridabad",
     description:
-      "Pre-owned Canon DSLR camera. Contact the seller for the exact model, shutter count, included lens, accessories and working condition.",
-    image:
+      "Barely 2,000 shutter count! Perfect camera for YouTube, 4K video & portrait photography. Includes bag, strap, battery and 64GB SD card.",
+    images: [
       "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=85",
-    seller: "Camera Point",
-    phone: "",
-    createdAt: Date.now() - 1000 * 60 * 60 * 24,
-  },
-  {
-    id: "demo-7",
-    title: "City Commuter Bicycle",
-    price: 4500,
-    category: "Accessories",
-    location: "Dwarka, Delhi",
-    description:
-      "Pre-owned bicycle suitable for everyday commuting and short rides. Ask about the frame size, gears, brakes and maintenance history.",
-    image:
-      "https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=900&q=85",
-    seller: "Vikas",
-    phone: "",
-    createdAt: Date.now() - 1000 * 60 * 60 * 30,
-  },
-  {
-    id: "demo-8",
-    title: "Wooden Bookshelf",
-    price: 2800,
-    category: "Furniture",
-    location: "Pitampura, Delhi",
-    description:
-      "Pre-owned wooden bookshelf for your home, study or office. Confirm dimensions, number of shelves and pickup arrangements with the seller.",
-    image:
-      "https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=900&q=85",
-    seller: "Home Essentials",
-    phone: "",
-    createdAt: Date.now() - 1000 * 60 * 60 * 40,
+    ],
+    seller: "Karan Lens World",
+    sellerRating: 4.9,
+    phone: "9871100223",
+    isFeatured: true,
+    createdAt: Date.now() - 1000 * 60 * 1200,
   },
 ];
 
@@ -208,123 +215,125 @@ const money = (value: number) =>
   }).format(value);
 
 const formatTime = (timestamp: number) => {
-  const hours = Math.max(
-    0,
-    Math.floor((Date.now() - timestamp) / (1000 * 60 * 60)),
-  );
-
-  if (hours < 1) return "Just now";
-  if (hours < 24) return `${hours}h ago`;
-
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-
+  const diffMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / (1000 * 60)));
+  if (diffMinutes < 1) return "Just now";
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
   return new Date(timestamp).toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
   });
 };
 
-export default function HomePage() {
+export default function SeldolMarketplace() {
   const [page, setPage] = useState<PageName>("home");
   const [products, setProducts] = useState<Product[]>(DEMO_PRODUCTS);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
+  // Filters
   const [search, setSearch] = useState("");
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState("All");
+  const [conditionFilter, setConditionFilter] = useState<string>("All");
   const [sort, setSort] = useState("newest");
   const [maxPrice, setMaxPrice] = useState("All");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  // Nav & Toast
   const [mobileMenu, setMobileMenu] = useState(false);
   const [notice, setNotice] = useState("");
 
+  // Sell Item Form
   const [newTitle, setNewTitle] = useState("");
   const [newPrice, setNewPrice] = useState("");
+  const [newNegotiable, setNewNegotiable] = useState(true);
   const [newCategory, setNewCategory] = useState("Mobiles");
+  const [newCondition, setNewCondition] = useState<ItemCondition>("Like New");
   const [newLocation, setNewLocation] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [newImage, setNewImage] = useState("");
-  const [imageName, setImageName] = useState("");
+  const [newImages, setNewImages] = useState<string[]>([]);
 
-  const [profileName, setProfileName] = useState("SELDOL Member");
-  const [profileCity, setProfileCity] = useState("India");
-  const [profilePhone, setProfilePhone] = useState("");
+  // User Profile
+  const [profileName, setProfileName] = useState("Sameer Malik");
+  const [profileCity, setProfileCity] = useState("Delhi, India");
+  const [profilePhone, setProfilePhone] = useState("9953023531");
   const [profileSaved, setProfileSaved] = useState(false);
 
+  // In-app Chat Simulation
   const [chatProduct, setChatProduct] = useState<Product | null>(null);
   const [chatText, setChatText] = useState("");
   const [chatMessages, setChatMessages] = useState<
     { id: string; productId: string; sender: string; text: string; time: number }[]
   >([]);
 
+  // LocalStorage sync
   useEffect(() => {
     try {
-      const savedProducts = localStorage.getItem("seldol_products");
-      const savedFavorites = localStorage.getItem("seldol_favorites");
-      const savedProfile = localStorage.getItem("seldol_profile");
-      const savedChats = localStorage.getItem("seldol_chats");
+      const savedProducts = localStorage.getItem("seldol_products_v2");
+      const savedFavorites = localStorage.getItem("seldol_favorites_v2");
+      const savedProfile = localStorage.getItem("seldol_profile_v2");
+      const savedChats = localStorage.getItem("seldol_chats_v2");
 
       if (savedProducts) {
         const parsed = JSON.parse(savedProducts) as Product[];
         setProducts([...parsed, ...DEMO_PRODUCTS]);
       }
-
       if (savedFavorites) {
         setFavorites(JSON.parse(savedFavorites) as string[]);
       }
-
       if (savedProfile) {
         const profile = JSON.parse(savedProfile);
-        setProfileName(profile.name || "SELDOL Member");
-        setProfileCity(profile.city || "India");
-        setProfilePhone(profile.phone || "");
+        if (profile.name) setProfileName(profile.name);
+        if (profile.city) setProfileCity(profile.city);
+        if (profile.phone) setProfilePhone(profile.phone);
       }
-
       if (savedChats) {
         setChatMessages(JSON.parse(savedChats));
       }
     } catch {
-      // Continue with demo data if browser storage is unavailable.
+      // safe fallback
     }
   }, []);
 
   useEffect(() => {
     if (!notice) return;
-    const timer = window.setTimeout(() => setNotice(""), 2800);
+    const timer = window.setTimeout(() => setNotice(""), 3000);
     return () => window.clearTimeout(timer);
   }, [notice]);
 
-  const ownProducts = products.filter(
-    (product) => !product.id.startsWith("demo-"),
-  );
+  const ownProducts = products.filter((p) => !p.id.startsWith("demo-"));
 
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
     if (category !== "All") {
-      result = result.filter((product) => product.category === category);
+      result = result.filter((p) => p.category === category);
     }
-
+    if (conditionFilter !== "All") {
+      result = result.filter((p) => p.condition === conditionFilter);
+    }
     if (search.trim()) {
-      const query = search.toLowerCase().trim();
+      const q = search.toLowerCase().trim();
       result = result.filter(
-        (product) =>
-          product.title.toLowerCase().includes(query) ||
-          product.description.toLowerCase().includes(query) ||
-          product.category.toLowerCase().includes(query),
+        (p) =>
+          p.title.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q)
       );
     }
-
     if (location.trim()) {
-      result = result.filter((product) =>
-        product.location.toLowerCase().includes(location.toLowerCase().trim()),
+      result = result.filter((p) =>
+        p.location.toLowerCase().includes(location.toLowerCase().trim())
       );
     }
-
     if (maxPrice !== "All") {
-      result = result.filter((product) => product.price <= Number(maxPrice));
+      result = result.filter((p) => p.price <= Number(maxPrice));
     }
 
     if (sort === "low") result.sort((a, b) => a.price - b.price);
@@ -332,7 +341,7 @@ export default function HomePage() {
     if (sort === "newest") result.sort((a, b) => b.createdAt - a.createdAt);
 
     return result;
-  }, [products, category, search, location, maxPrice, sort]);
+  }, [products, category, conditionFilter, search, location, maxPrice, sort]);
 
   const showPage = (nextPage: PageName) => {
     setPage(nextPage);
@@ -346,140 +355,134 @@ export default function HomePage() {
       : [...favorites, productId];
 
     setFavorites(updated);
-
     try {
-      localStorage.setItem("seldol_favorites", JSON.stringify(updated));
-    } catch {
-      // Favorites still work for the current session.
-    }
+      localStorage.setItem("seldol_favorites_v2", JSON.stringify(updated));
+    } catch {}
 
     setNotice(
-      updated.includes(productId)
-        ? "Added to your wishlist"
-        : "Removed from your wishlist",
+      updated.includes(productId) ? "Added to Wishlist ❤️" : "Removed from Wishlist"
     );
   };
 
   const openProduct = (product: Product) => {
     setSelectedProduct(product);
+    setActiveImageIndex(0);
     setPage("details");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleImage = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleMultipleImages = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
-    if (!file.type.startsWith("image/")) {
-      setNotice("Please select an image file");
+    if (newImages.length + files.length > 5) {
+      setNotice("You can upload a maximum of 5 images");
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      setNotice("Image size must be 2 MB or less");
-      event.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setNewImage(reader.result);
-        setImageName(file.name);
+    Array.from(files).forEach((file) => {
+      if (!file.type.startsWith("image/")) {
+        setNotice("Only image files are allowed");
+        return;
       }
-    };
+      if (file.size > 3 * 1024 * 1024) {
+        setNotice("Each image must be under 3 MB");
+        return;
+      }
 
-    reader.onerror = () => setNotice("Unable to read this image");
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          setNewImages((prev) => [...prev, reader.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
 
-    reader.readAsDataURL(file);
+  const removeUploadImage = (index: number) => {
+    setNewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSell = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!newTitle.trim() || !newPrice || !newLocation.trim()) {
-      setNotice("Please complete all required fields");
+      setNotice("Please fill in all required fields!");
       return;
     }
 
-    if (Number(newPrice) <= 0 || !Number.isFinite(Number(newPrice))) {
-      setNotice("Enter a valid price");
+    const priceNum = Number(newPrice);
+    if (priceNum <= 0 || isNaN(priceNum)) {
+      setNotice("Please enter a valid price");
       return;
     }
+
+    const fallbackImage =
+      "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=900&q=85";
 
     const product: Product = {
       id: `user-${Date.now()}`,
       title: newTitle.trim(),
-      price: Number(newPrice),
+      price: priceNum,
+      isNegotiable: newNegotiable,
       category: newCategory,
+      condition: newCondition,
       location: newLocation.trim(),
-      description: newDescription.trim() || "No description provided.",
-      image:
-        newImage ||
-        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=85",
+      description: newDescription.trim() || "No detailed description provided.",
+      images: newImages.length > 0 ? newImages : [fallbackImage],
       seller: profileName,
+      sellerRating: 5.0,
       phone: newPhone.trim() || profilePhone,
+      isFeatured: false,
       createdAt: Date.now(),
     };
 
     const updatedOwn = [product, ...ownProducts];
-
     try {
-      localStorage.setItem("seldol_products", JSON.stringify(updatedOwn));
+      localStorage.setItem("seldol_products_v2", JSON.stringify(updatedOwn));
     } catch {
-      setNotice("Storage is full. Try a smaller image.");
+      setNotice("Local storage full! Try uploading smaller images.");
       return;
     }
 
     setProducts([product, ...products]);
+    // Reset Form
     setNewTitle("");
     setNewPrice("");
-    setNewCategory("Mobiles");
     setNewLocation("");
     setNewDescription("");
     setNewPhone("");
-    setNewImage("");
-    setImageName("");
-
+    setNewImages([]);
     setSelectedProduct(product);
     setPage("details");
-    setNotice("Your listing has been created!");
+    setNotice("Ad posted successfully! 🎉");
   };
 
   const deleteProduct = (id: string) => {
-    const updatedOwn = ownProducts.filter((product) => product.id !== id);
-    const updatedProducts = products.filter((product) => product.id !== id);
-
+    const updatedOwn = ownProducts.filter((p) => p.id !== id);
+    const updatedProducts = products.filter((p) => p.id !== id);
     setProducts(updatedProducts);
-
     try {
-      localStorage.setItem("seldol_products", JSON.stringify(updatedOwn));
-    } catch {
-      // Update remains available in the current session.
-    }
-
-    setNotice("Listing deleted");
+      localStorage.setItem("seldol_products_v2", JSON.stringify(updatedOwn));
+    } catch {}
+    setNotice("Listing removed");
   };
 
-  const saveProfile = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const saveProfile = (e: FormEvent) => {
+    e.preventDefault();
     try {
       localStorage.setItem(
-        "seldol_profile",
+        "seldol_profile_v2",
         JSON.stringify({
           name: profileName,
           city: profileCity,
           phone: profilePhone,
-        }),
+        })
       );
-    } catch {
-      // Continue with the in-memory profile.
-    }
-
+    } catch {}
     setProfileSaved(true);
-    setNotice("Profile saved successfully");
+    setNotice("Profile saved successfully ✨");
   };
 
   const startChat = (product: Product) => {
@@ -488,12 +491,11 @@ export default function HomePage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const sendChat = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const sendChat = (e: FormEvent) => {
+    e.preventDefault();
     if (!chatText.trim() || !chatProduct) return;
 
-    const message = {
+    const userMsg = {
       id: `msg-${Date.now()}`,
       productId: chatProduct.id,
       sender: profileName,
@@ -501,1845 +503,1341 @@ export default function HomePage() {
       time: Date.now(),
     };
 
-    const updated = [...chatMessages, message];
-
+    let updated = [...chatMessages, userMsg];
     setChatMessages(updated);
     setChatText("");
 
+    // Simulate smart seller reply
+    setTimeout(() => {
+      const sellerReplies = [
+        "Yes, it is available! When would you like to check it?",
+        "Price is slightly negotiable if you pick it up today.",
+        "Sure! You can inspect the condition in person anytime after 5 PM.",
+      ];
+      const randomReply =
+        sellerReplies[Math.floor(Math.random() * sellerReplies.length)];
+
+      const replyMsg = {
+        id: `reply-${Date.now()}`,
+        productId: chatProduct.id,
+        sender: chatProduct.seller,
+        text: randomReply,
+        time: Date.now(),
+      };
+      const finalMsgs = [...updated, replyMsg];
+      setChatMessages(finalMsgs);
+      try {
+        localStorage.setItem("seldol_chats_v2", JSON.stringify(finalMsgs));
+      } catch {}
+    }, 1200);
+
     try {
-      localStorage.setItem("seldol_chats", JSON.stringify(updated));
-    } catch {
-      // Keep the conversation in the current session.
-    }
+      localStorage.setItem("seldol_chats_v2", JSON.stringify(updated));
+    } catch {}
   };
 
   const startWhatsApp = (product: Product) => {
-    const digits = product.phone.replace(/\D/g, "");
-
+    const digits = (product.phone || "").replace(/\D/g, "");
     if (!digits) {
-      setNotice("This demo listing has no seller phone number");
+      setNotice("Seller hasn't added a WhatsApp number.");
       return;
     }
-
     const phone = digits.length === 10 ? `91${digits}` : digits;
-    const message = `Hi, I'm interested in your "${product.title}" listed on SELDOL for ${money(product.price)}. Is it available?`;
-
-    window.open(
-      `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
+    const msg = `Hi ${product.seller}, I saw your ad for "${product.title}" (${money(
+      product.price
+    )}) on SELDOL. Is it still available?`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
-  const startCall = (product: Product) => {
-    const digits = product.phone.replace(/\D/g, "");
-
-    if (!digits) {
-      setNotice("This demo listing has no seller phone number");
-      return;
+  const copyProductLink = () => {
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(window.location.href);
+      setNotice("Product link copied to clipboard! 📋");
     }
-
-    window.location.href = `tel:${digits}`;
   };
-
-  const PageHeading = ({
-    eyebrow,
-    title,
-    subtitle,
-  }: {
-    eyebrow: string;
-    title: string;
-    subtitle: string;
-  }) => (
-    <div className="mb-7">
-      <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-violet-600">
-        {eyebrow}
-      </p>
-      <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-        {title}
-      </h1>
-      <p className="mt-2 text-sm leading-6 text-slate-500">{subtitle}</p>
-    </div>
-  );
-
-  const ProductCard = ({ product }: { product: Product }) => {
-    const isFavorite = favorites.includes(product.id);
-
-    return (
-      <article className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white transition duration-300 hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-900/[0.06]">
-        <div
-          className="relative cursor-pointer overflow-hidden bg-slate-100"
-          onClick={() => openProduct(product)}
-        >
-          <div className="aspect-[4/3] overflow-hidden">
-            <img
-              src={product.image}
-              alt={product.title}
-              loading="lazy"
-              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-            />
-          </div>
-
-          <span className="absolute left-3 top-3 rounded-full border border-white/70 bg-white/95 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-700 shadow-sm">
-            {product.category}
-          </span>
-
-          <button
-            type="button"
-            aria-label={isFavorite ? "Remove from wishlist" : "Add to wishlist"}
-            onClick={(event) => {
-              event.stopPropagation();
-              toggleFavorite(product.id);
-            }}
-            className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/80 shadow-sm transition ${
-              isFavorite
-                ? "bg-rose-500 text-white"
-                : "bg-white/95 text-slate-600 hover:bg-rose-50 hover:text-rose-500"
-            }`}
-          >
-            <Heart size={17} fill={isFavorite ? "currentColor" : "none"} />
-          </button>
-        </div>
-
-        <div className="p-4">
-          <div className="mb-1 flex items-start justify-between gap-2">
-            <h3
-              onClick={() => openProduct(product)}
-              className="line-clamp-2 min-h-[40px] cursor-pointer text-sm font-bold leading-5 text-slate-900 transition hover:text-violet-700"
-            >
-              {product.title}
-            </h3>
-          </div>
-
-          <p className="text-xl font-extrabold tracking-tight text-slate-950">
-            {money(product.price)}
-          </p>
-
-          <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
-            <span className="flex min-w-0 items-center gap-1 truncate">
-              <MapPin size={13} className="shrink-0 text-violet-500" />
-              <span className="truncate">{product.location}</span>
-            </span>
-            <span className="shrink-0">{formatTime(product.createdAt)}</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => openProduct(product)}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-xs font-bold text-white transition hover:bg-violet-700"
-          >
-            View details
-            <ChevronRight size={15} />
-          </button>
-        </div>
-      </article>
-    );
-  };
-
-  const EmptyState = ({
-    icon: Icon,
-    title,
-    description,
-    buttonText,
-    onClick,
-  }: {
-    icon: typeof Package;
-    title: string;
-    description: string;
-    buttonText?: string;
-    onClick?: () => void;
-  }) => (
-    <div className="flex min-h-[300px] flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
-        <Icon size={29} />
-      </div>
-      <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-      <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">
-        {description}
-      </p>
-
-      {buttonText && onClick && (
-        <button
-          type="button"
-          onClick={onClick}
-          className="mt-6 rounded-xl bg-violet-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-violet-700"
-        >
-          {buttonText}
-        </button>
-      )}
-    </div>
-  );
-
-  const navItems: {
-    name: string;
-    page: PageName;
-    icon: typeof Package;
-  }[] = [
-    { name: "Home", page: "home", icon: LayoutGrid },
-    { name: "My Ads", page: "myads", icon: Package },
-    { name: "Wishlist", page: "wishlist", icon: Heart },
-    { name: "Messages", page: "messages", icon: MessageCircle },
-    { name: "Profile", page: "profile", icon: UserRound },
-  ];
 
   return (
-    <div className="min-h-screen bg-[#f7f8fc] text-slate-900">
-      {/* Announcement strip */}
-      <div className="bg-slate-950 px-4 py-2 text-center text-[11px] font-medium tracking-wide text-slate-200 sm:text-xs">
-        <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-        A smarter way to buy and sell pre-loved products across India
-        <span className="ml-2 hidden text-violet-300 sm:inline">
-          Discover your next great deal →
+    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 antialiased selection:bg-violet-600 selection:text-white">
+      {/* Top Banner */}
+      <div className="bg-slate-950 px-4 py-2 text-center text-xs font-medium text-slate-300">
+        <span className="mr-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          LIVE MARKETPLACE
         </span>
+        Buy & Sell pre-loved verified products directly with zero middleman fees.
       </div>
 
-      {/* Main navigation */}
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1440px] items-center gap-4 px-4 py-4 sm:px-6 lg:px-10">
+      {/* Main Header */}
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+          {/* Logo */}
           <button
-            type="button"
             onClick={() => showPage("home")}
-            className="flex shrink-0 items-center gap-2.5"
-            aria-label="SELDOL home"
+            className="group flex items-center gap-2.5 text-left focus:outline-none"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-blue-600 text-white shadow-lg shadow-violet-600/20">
-              <ShoppingBag size={21} strokeWidth={2.4} />
-            </span>
-            <span className="text-[23px] font-black tracking-[-1.3px] text-slate-950">
-              SEL<span className="text-violet-600">DOL</span>
-              <span className="ml-1 align-top text-[9px] font-bold tracking-normal text-slate-400">
-                INDIA
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/30 transition group-hover:scale-105">
+              <ShoppingBag size={22} strokeWidth={2.4} />
+            </div>
+            <div>
+              <span className="text-2xl font-black tracking-tight text-slate-950">
+                SEL<span className="text-violet-600">DOL</span>
               </span>
-            </span>
+              <span className="ml-1 rounded bg-violet-100 px-1 py-0.5 text-[9px] font-black tracking-wider text-violet-700">
+                PRO
+              </span>
+            </div>
           </button>
 
-          <div className="mx-auto hidden max-w-[570px] flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 transition focus-within:border-violet-300 focus-within:bg-white focus-within:ring-4 focus-within:ring-violet-100 md:flex">
-            <Search size={19} className="shrink-0 text-slate-400" />
+          {/* Quick Search Header (Desktop) */}
+          <div className="hidden max-w-lg flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2 transition focus-within:border-violet-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-violet-100 md:flex">
+            <Search size={18} className="text-slate-400" />
             <input
+              type="text"
               value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
+              onChange={(e) => {
+                setSearch(e.target.value);
                 if (page !== "home") setPage("home");
               }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") showPage("home");
-              }}
-              placeholder="Search mobiles, laptops, bikes..."
-              className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+              placeholder="Search mobiles, bikes, laptops, furniture..."
+              className="w-full bg-transparent text-xs font-medium outline-none placeholder:text-slate-400"
             />
             {search && (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                aria-label="Clear search"
-                className="text-slate-400 hover:text-slate-800"
-              >
-                <X size={16} />
+              <button onClick={() => setSearch("")} className="text-slate-400 hover:text-slate-600">
+                <X size={15} />
               </button>
             )}
           </div>
 
-          <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+          {/* Desktop Actions */}
+          <div className="hidden items-center gap-2 md:flex">
             <button
-              type="button"
               onClick={() => showPage("wishlist")}
-              className="relative hidden h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-violet-50 hover:text-violet-700 sm:flex"
-              aria-label="Wishlist"
+              className="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-violet-600"
+              title="Wishlist"
             >
               <Heart size={20} />
               {favorites.length > 0 && (
-                <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-violet-600 px-1 text-[9px] font-bold text-white">
+                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white">
                   {favorites.length}
                 </span>
               )}
             </button>
 
             <button
-              type="button"
               onClick={() => showPage("messages")}
-              className="hidden h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-violet-50 hover:text-violet-700 sm:flex"
-              aria-label="Messages"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-violet-600"
+              title="Chats"
             >
               <MessageCircle size={20} />
             </button>
 
             <button
-              type="button"
+              onClick={() => showPage("myads")}
+              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
+            >
+              <Package size={17} className="text-violet-600" />
+              <span>My Ads</span>
+            </button>
+
+            <button
               onClick={() => showPage("profile")}
-              className="hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-violet-200 hover:text-violet-700 sm:flex"
-              aria-label="Profile"
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-violet-300 hover:bg-violet-50/50"
             >
-              <UserRound size={19} />
+              <UserRound size={17} className="text-slate-600" />
+              <span>{profileName.split(" ")[0]}</span>
             </button>
 
             <button
-              type="button"
               onClick={() => showPage("sell")}
-              className="flex h-10 items-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 px-3.5 text-xs font-bold text-white shadow-lg shadow-violet-600/20 transition hover:-translate-y-0.5 hover:shadow-xl sm:gap-2 sm:px-5 sm:text-sm"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-xs font-black text-white shadow-md shadow-violet-600/20 transition hover:brightness-105 active:scale-95"
             >
-              <Plus size={17} />
-              <span>Sell Item</span>
+              <Plus size={16} strokeWidth={3} />
+              <span>SELL NOW</span>
             </button>
+          </div>
 
+          {/* Mobile Right Bar */}
+          <div className="flex items-center gap-2 md:hidden">
             <button
-              type="button"
+              onClick={() => showPage("sell")}
+              className="flex items-center gap-1 rounded-xl bg-violet-600 px-3 py-2 text-xs font-bold text-white shadow-sm"
+            >
+              <Plus size={15} />
+              <span>Sell</span>
+            </button>
+            <button
               onClick={() => setMobileMenu(!mobileMenu)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 md:hidden"
-              aria-label="Open menu"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700"
             >
               {mobileMenu ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
 
-        {/* Mobile search */}
-        <div className="px-4 pb-3 md:hidden">
-          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 focus-within:border-violet-300 focus-within:bg-white">
-            <Search size={18} className="shrink-0 text-slate-400" />
-            <input
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                if (page !== "home") setPage("home");
-              }}
-              placeholder="Search products..."
-              className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                aria-label="Clear search"
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile menu */}
+        {/* Mobile Dropdown Menu */}
         {mobileMenu && (
-          <div className="border-t border-slate-100 bg-white px-4 py-3 md:hidden">
-            <div className="grid grid-cols-2 gap-2">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.page}
-                    type="button"
-                    onClick={() => showPage(item.page)}
-                    className={`flex items-center gap-2 rounded-xl px-3 py-3 text-left text-sm font-semibold ${
-                      page === item.page
-                        ? "bg-violet-50 text-violet-700"
-                        : "text-slate-600 hover:bg-slate-50"
-                    }`}
-                  >
-                    <Icon size={17} />
-                    {item.name}
-                  </button>
-                );
-              })}
+          <div className="border-t border-slate-200 bg-white p-4 md:hidden">
+            <div className="grid grid-cols-2 gap-2 text-sm font-semibold">
               <button
-                type="button"
-                onClick={() => showPage("sell")}
-                className="flex items-center gap-2 rounded-xl bg-violet-600 px-3 py-3 text-left text-sm font-bold text-white"
+                onClick={() => showPage("home")}
+                className="flex items-center gap-2 rounded-xl p-3 hover:bg-slate-50"
               >
-                <Plus size={17} />
-                Sell a product
+                <LayoutGrid size={18} className="text-violet-600" /> Home
+              </button>
+              <button
+                onClick={() => showPage("wishlist")}
+                className="flex items-center gap-2 rounded-xl p-3 hover:bg-slate-50"
+              >
+                <Heart size={18} className="text-rose-500" /> Wishlist ({favorites.length})
+              </button>
+              <button
+                onClick={() => showPage("myads")}
+                className="flex items-center gap-2 rounded-xl p-3 hover:bg-slate-50"
+              >
+                <Package size={18} className="text-indigo-600" /> My Ads ({ownProducts.length})
+              </button>
+              <button
+                onClick={() => showPage("messages")}
+                className="flex items-center gap-2 rounded-xl p-3 hover:bg-slate-50"
+              >
+                <MessageCircle size={18} className="text-emerald-600" /> Chats
+              </button>
+              <button
+                onClick={() => showPage("profile")}
+                className="col-span-2 flex items-center gap-2 rounded-xl border border-slate-100 p-3 hover:bg-slate-50"
+              >
+                <UserRound size={18} className="text-slate-600" /> Profile: {profileName}
               </button>
             </div>
           </div>
         )}
-
-        {/* Desktop secondary navigation */}
-        <div className="hidden border-t border-slate-100 md:block">
-          <nav className="mx-auto flex max-w-[1440px] items-center gap-7 px-6 lg:px-10">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.page}
-                  type="button"
-                  onClick={() => showPage(item.page)}
-                  className={`relative flex items-center gap-2 py-3.5 text-xs font-semibold transition ${
-                    page === item.page
-                      ? "text-violet-700"
-                      : "text-slate-500 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon size={15} />
-                  {item.name}
-                  {page === item.page && (
-                    <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-violet-600" />
-                  )}
-                </button>
-              );
-            })}
-
-            <span className="ml-auto flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
-              <ShieldCheck size={15} className="text-emerald-500" />
-              Buy smarter. Sell easier.
-            </span>
-          </nav>
-        </div>
       </header>
 
-      <main className="mx-auto min-h-[65vh] max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
-        {/* HOME */}
+      {/* Main Body */}
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+        {/* ===================== HOME PAGE ===================== */}
         {page === "home" && (
-          <>
+          <div className="space-y-8">
+            {/* Hero Banner (Only shown if no active filter) */}
             {!search && category === "All" && !location && (
-              <>
-                {/* Hero */}
-                <section className="relative mb-8 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#17152f] via-[#25215a] to-[#3348a8] text-white shadow-xl shadow-indigo-950/10 sm:mb-10">
-                  <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-violet-400/20 blur-3xl" />
-                  <div className="pointer-events-none absolute -bottom-32 right-1/3 h-72 w-72 rounded-full bg-blue-400/20 blur-3xl" />
-
-                  <div className="relative grid items-center gap-7 px-6 py-9 sm:px-10 sm:py-12 lg:grid-cols-[1.2fr_0.8fr] lg:px-14 lg:py-14">
-                    <div className="max-w-2xl">
-                      <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-[11px] font-semibold text-violet-100 backdrop-blur">
-                        <Sparkles size={14} className="text-amber-300" />
-                        YOUR NEXT GREAT FIND STARTS HERE
-                      </div>
-
-                      <h1 className="text-[34px] font-black leading-[1.12] tracking-[-1.7px] sm:text-5xl lg:text-[58px]">
-                        Great finds.
-                        <br />
-                        <span className="bg-gradient-to-r from-violet-300 via-blue-200 to-cyan-200 bg-clip-text text-transparent">
-                          Better prices.
-                        </span>
-                      </h1>
-
-                      <p className="mt-5 max-w-lg text-sm leading-7 text-indigo-100/80 sm:text-base">
-                        Discover pre-loved products, connect directly with
-                        sellers and find something amazing without paying full
-                        price.
-                      </p>
-
-                      <div className="mt-7 flex flex-wrap gap-3">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            document
-                              .getElementById("products")
-                              ?.scrollIntoView({ behavior: "smooth" })
-                          }
-                          className="flex items-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-bold text-slate-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-violet-50"
-                        >
-                          Explore products
-                          <ChevronRight size={17} />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => showPage("sell")}
-                          className="flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 py-3.5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20"
-                        >
-                          <Plus size={17} />
-                          Start selling
-                        </button>
-                      </div>
-
-                      <div className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-xs text-indigo-100/80">
-                        <span className="flex items-center gap-1.5">
-                          <CheckCircle2 size={15} className="text-emerald-300" />
-                          Direct connections
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <CheckCircle2 size={15} className="text-emerald-300" />
-                          Pre-loved products
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <CheckCircle2 size={15} className="text-emerald-300" />
-                          Simple listings
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="relative mx-auto hidden w-full max-w-md lg:block">
-                      <div className="absolute inset-8 rounded-full bg-violet-400/20 blur-3xl" />
-
-                      <div className="relative rounded-[26px] border border-white/15 bg-white/[0.08] p-4 shadow-2xl backdrop-blur-xl">
-                        <div className="mb-4 flex items-center justify-between px-1">
-                          <div>
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-200">
-                              Handpicked finds
-                            </p>
-                            <p className="mt-1 text-sm font-bold text-white">
-                              Worth a second look
-                            </p>
-                          </div>
-                          <span className="rounded-full bg-emerald-400/15 px-3 py-1.5 text-[10px] font-bold text-emerald-200">
-                            PRE-LOVED
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="overflow-hidden rounded-2xl bg-white p-2">
-                            <img
-                              src={DEMO_PRODUCTS[0].image}
-                              alt="Pre-owned smartphone"
-                              className="h-32 w-full rounded-xl object-cover"
-                            />
-                            <p className="mt-2 truncate text-xs font-bold text-slate-900">
-                              iPhone 13
-                            </p>
-                            <p className="mt-1 text-sm font-extrabold text-violet-700">
-                              ₹28,500
-                            </p>
-                          </div>
-
-                          <div className="mt-6 overflow-hidden rounded-2xl bg-white p-2">
-                            <img
-                              src={DEMO_PRODUCTS[5].image}
-                              alt="Pre-owned camera"
-                              className="h-32 w-full rounded-xl object-cover"
-                            />
-                            <p className="mt-2 truncate text-xs font-bold text-slate-900">
-                              DSLR Camera
-                            </p>
-                            <p className="mt-1 text-sm font-extrabold text-violet-700">
-                              ₹22,000
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="mt-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 p-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400/15 text-emerald-200">
-                            <BadgeCheck size={22} />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-white">
-                              Your next great deal
-                            </p>
-                            <p className="mt-1 text-[10px] text-indigo-100/70">
-                              Search, connect and discover
-                            </p>
-                          </div>
-                          <ArrowUpDown size={16} className="ml-auto text-indigo-200" />
-                        </div>
-                      </div>
-                    </div>
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-violet-950 p-7 text-white shadow-xl sm:p-12">
+                <div className="relative z-10 max-w-2xl space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-violet-500/20 px-3 py-1 text-xs font-semibold text-violet-200">
+                    <Sparkles size={14} className="text-amber-300" />
+                    Trusted Direct Buying & Selling
                   </div>
-                </section>
-
-                {/* Feature strip */}
-                <section className="mb-9 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {[
-                    {
-                      icon: ShieldCheck,
-                      title: "Direct deals",
-                      text: "Connect with sellers",
-                    },
-                    {
-                      icon: IndianRupee,
-                      title: "Better value",
-                      text: "Find pre-loved goods",
-                    },
-                    {
-                      icon: Zap,
-                      title: "Easy listings",
-                      text: "Post products simply",
-                    },
-                    {
-                      icon: Headphones,
-                      title: "Stay connected",
-                      text: "Chat with sellers",
-                    },
-                  ].map((feature) => {
-                    const Icon = feature.icon;
-                    return (
-                      <div
-                        key={feature.title}
-                        className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4"
-                      >
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
-                          <Icon size={19} />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">
-                            {feature.title}
-                          </p>
-                          <p className="mt-1 text-[10px] leading-4 text-slate-500">
-                            {feature.text}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </section>
-
-                {/* Categories */}
-                <section className="mb-10">
-                  <div className="mb-5 flex items-end justify-between gap-3">
-                    <div>
-                      <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-violet-600">
-                        Explore your interests
-                      </p>
-                      <h2 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
-                        Browse categories
-                      </h2>
-                    </div>
+                  <h1 className="text-3xl font-black tracking-tight sm:text-5xl">
+                    Buy Smart. Sell Faster. <br />
+                    <span className="bg-gradient-to-r from-violet-300 via-pink-200 to-indigo-200 bg-clip-text text-transparent">
+                      Direct from Owners.
+                    </span>
+                  </h1>
+                  <p className="text-sm text-slate-300 sm:text-base">
+                    Skip dealer markups. Browse verified local listings across India with direct WhatsApp and calling features.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3 pt-2">
                     <button
-                      type="button"
-                      onClick={() => setCategory("All")}
-                      className="text-xs font-bold text-violet-700 hover:text-violet-900"
+                      onClick={() => {
+                        const el = document.getElementById("browse-section");
+                        el?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className="rounded-xl bg-violet-600 px-6 py-3 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-violet-600/30 transition hover:bg-violet-700"
                     >
-                      View all
+                      Browse Ads
+                    </button>
+                    <button
+                      onClick={() => showPage("sell")}
+                      className="rounded-xl border border-white/20 bg-white/10 px-6 py-3 text-xs font-black uppercase tracking-wider text-white backdrop-blur transition hover:bg-white/20"
+                    >
+                      + Post Free Ad
                     </button>
                   </div>
-
-                  <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-                    {CATEGORIES.map((item, index) => {
-                      const Icon = item.icon;
-                      const colors = [
-                        "bg-slate-100 text-slate-700",
-                        "bg-violet-50 text-violet-700",
-                        "bg-orange-50 text-orange-600",
-                        "bg-blue-50 text-blue-700",
-                        "bg-amber-50 text-amber-700",
-                        "bg-pink-50 text-pink-600",
-                        "bg-cyan-50 text-cyan-700",
-                      ];
-
-                      return (
-                        <button
-                          key={item.name}
-                          type="button"
-                          onClick={() => {
-                            setCategory(item.name);
-                            document
-                              .getElementById("products")
-                              ?.scrollIntoView({ behavior: "smooth" });
-                          }}
-                          className={`group flex min-h-[105px] flex-col items-center justify-center gap-3 rounded-2xl border p-3 transition hover:-translate-y-1 hover:border-violet-200 hover:shadow-lg hover:shadow-violet-900/[0.04] ${
-                            category === item.name
-                              ? "border-violet-300 bg-violet-50"
-                              : "border-slate-200/80 bg-white"
-                          }`}
-                        >
-                          <span
-                            className={`flex h-12 w-12 items-center justify-center rounded-2xl transition group-hover:scale-105 ${colors[index]}`}
-                          >
-                            <Icon size={22} />
-                          </span>
-                          <span className="text-[11px] font-bold text-slate-700 sm:text-xs">
-                            {item.name}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-              </>
+                </div>
+                <div className="pointer-events-none absolute -bottom-16 -right-16 h-72 w-72 rounded-full bg-violet-600/30 blur-3xl" />
+              </div>
             )}
 
-            {/* Product listing area */}
-            <section id="products" className="scroll-mt-40">
-              <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-violet-600">
-                    {search ? "Search results" : "The latest finds"}
-                  </p>
-                  <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
-                    {search
-                      ? `Results for "${search}"`
-                      : category === "All"
-                        ? "Discover products"
-                        : category}
-                  </h2>
-                  <p className="mt-2 text-xs text-slate-500">
-                    {filteredProducts.length} products found
-                  </p>
-                </div>
+            {/* Categories Carousel */}
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-base font-black tracking-tight text-slate-900 sm:text-lg">
+                  Popular Categories
+                </h2>
+                {category !== "All" && (
+                  <button
+                    onClick={() => setCategory("All")}
+                    className="text-xs font-bold text-violet-600 hover:underline"
+                  >
+                    Reset category
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+                {CATEGORIES.map((cat) => {
+                  const Icon = cat.icon;
+                  const isSelected = category === cat.name;
+                  return (
+                    <button
+                      key={cat.name}
+                      onClick={() => setCategory(cat.name)}
+                      className={`flex shrink-0 items-center gap-2.5 rounded-2xl border px-4 py-2.5 text-xs font-bold transition ${
+                        isSelected
+                          ? "border-violet-600 bg-violet-600 text-white shadow-md shadow-violet-600/25"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      <Icon size={16} />
+                      {cat.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-                <div className="flex flex-wrap gap-2">
-                  <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 sm:min-w-[170px] sm:flex-none">
-                    <MapPin size={16} className="shrink-0 text-violet-600" />
+            {/* Filter & Search Bar */}
+            <div id="browse-section" className="space-y-4">
+              <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+                {/* Search & Location inputs */}
+                <div className="flex flex-1 flex-col gap-3 sm:flex-row">
+                  <div className="flex flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+                    <Search size={16} className="text-slate-400" />
+                    <input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Title or keyword..."
+                      className="w-full bg-transparent outline-none"
+                    />
+                    {search && (
+                      <button onClick={() => setSearch("")}>
+                        <X size={14} className="text-slate-400" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex sm:w-48 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+                    <MapPin size={16} className="text-violet-600" />
                     <input
                       value={location}
-                      onChange={(event) => setLocation(event.target.value)}
-                      placeholder="Filter by city"
-                      className="w-full min-w-0 bg-transparent text-xs outline-none placeholder:text-slate-400"
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="City or area..."
+                      className="w-full bg-transparent outline-none"
                     />
-                    {location && (
-                      <button
-                        type="button"
-                        onClick={() => setLocation("")}
-                        aria-label="Clear location"
-                      >
-                        <X size={14} />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-                    <SlidersHorizontal size={15} className="text-violet-600" />
-                    <select
-                      value={maxPrice}
-                      onChange={(event) => setMaxPrice(event.target.value)}
-                      aria-label="Maximum price"
-                      className="max-w-[130px] bg-transparent text-xs font-semibold outline-none"
-                    >
-                      <option value="All">Any price</option>
-                      <option value="1000">Under ₹1,000</option>
-                      <option value="5000">Under ₹5,000</option>
-                      <option value="10000">Under ₹10,000</option>
-                      <option value="25000">Under ₹25,000</option>
-                      <option value="50000">Under ₹50,000</option>
-                      <option value="100000">Under ₹1 lakh</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-                    <ArrowUpDown size={15} className="text-violet-600" />
-                    <select
-                      value={sort}
-                      onChange={(event) => setSort(event.target.value)}
-                      aria-label="Sort products"
-                      className="bg-transparent text-xs font-semibold outline-none"
-                    >
-                      <option value="newest">Newest first</option>
-                      <option value="low">Price: low to high</option>
-                      <option value="high">Price: high to low</option>
-                    </select>
                   </div>
                 </div>
-              </div>
 
-              {/* Category chips */}
-              <div className="mb-6 flex gap-2 overflow-x-auto pb-1">
-                {CATEGORIES.map((item) => (
-                  <button
-                    key={item.name}
-                    type="button"
-                    onClick={() => setCategory(item.name)}
-                    className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold transition ${
-                      category === item.name
-                        ? "border-violet-600 bg-violet-600 text-white shadow-md shadow-violet-600/15"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:text-violet-700"
-                    }`}
+                {/* Filter dropdowns */}
+                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                  {/* Condition Filter */}
+                  <select
+                    value={conditionFilter}
+                    onChange={(e) => setConditionFilter(e.target.value)}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 outline-none"
                   >
-                    {item.name}
+                    <option value="All">All Conditions</option>
+                    <option value="Brand New">Brand New</option>
+                    <option value="Like New">Like New</option>
+                    <option value="Good">Good</option>
+                    <option value="Fair">Fair</option>
+                  </select>
+
+                  {/* Max Budget */}
+                  <select
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 outline-none"
+                  >
+                    <option value="All">Max Budget</option>
+                    <option value="5000">Under ₹5,000</option>
+                    <option value="15000">Under ₹15,000</option>
+                    <option value="30000">Under ₹30,000</option>
+                    <option value="75000">Under ₹75,000</option>
+                    <option value="150000">Under ₹1.5 Lakh</option>
+                  </select>
+
+                  {/* Sorting */}
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value)}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 outline-none"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="low">Price: Low to High</option>
+                    <option value="high">Price: High to Low</option>
+                  </select>
+
+                  {/* View Mode Toggle */}
+                  <div className="hidden items-center rounded-xl border border-slate-200 bg-slate-50 p-0.5 sm:flex">
+                    <button
+                      onClick={() => setViewMode("grid")}
+                      className={`rounded-lg p-1.5 ${
+                        viewMode === "grid" ? "bg-white text-violet-600 shadow-sm" : "text-slate-400"
+                      }`}
+                    >
+                      <LayoutGrid size={15} />
+                    </button>
+                    <button
+                      onClick={() => setViewMode("list")}
+                      className={`rounded-lg p-1.5 ${
+                        viewMode === "list" ? "bg-white text-violet-600 shadow-sm" : "text-slate-400"
+                      }`}
+                    >
+                      <List size={15} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Header */}
+              <div className="flex items-center justify-between px-1 text-xs font-semibold text-slate-500">
+                <span>
+                  Showing <strong className="text-slate-900">{filteredProducts.length}</strong> items
+                  {category !== "All" && ` in ${category}`}
+                </span>
+                {(search || location || maxPrice !== "All" || conditionFilter !== "All") && (
+                  <button
+                    onClick={() => {
+                      setSearch("");
+                      setLocation("");
+                      setMaxPrice("All");
+                      setConditionFilter("All");
+                      setCategory("All");
+                    }}
+                    className="font-bold text-violet-600 hover:underline"
+                  >
+                    Clear All Filters
                   </button>
-                ))}
-              </div>
-
-              {filteredProducts.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
-                  {filteredProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  icon={Search}
-                  title="No products found"
-                  description="Try a different search, change the category or remove some filters."
-                  buttonText="Clear all filters"
-                  onClick={() => {
-                    setSearch("");
-                    setLocation("");
-                    setCategory("All");
-                    setMaxPrice("All");
-                    setSort("newest");
-                  }}
-                />
-              )}
-            </section>
-
-            {/* Sell banner */}
-            <section className="mt-12 overflow-hidden rounded-3xl border border-violet-100 bg-gradient-to-r from-violet-50 via-white to-blue-50 p-6 sm:p-9">
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-600/20">
-                    <Package size={23} />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-extrabold tracking-tight text-slate-900">
-                      Have something to sell?
-                    </h2>
-                    <p className="mt-2 max-w-lg text-sm leading-6 text-slate-500">
-                      Give your pre-loved products a new home. Create a listing
-                      with photos, a price and a description.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => showPage("sell")}
-                  className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-700"
-                >
-                  <Plus size={17} />
-                  Post an ad
-                </button>
-              </div>
-            </section>
-          </>
-        )}
-
-        {/* PRODUCT DETAILS */}
-        {page === "details" && selectedProduct && (
-          <section>
-            <button
-              type="button"
-              onClick={() => showPage("home")}
-              className="mb-6 flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-violet-700"
-            >
-              <ArrowLeft size={17} />
-              Back to products
-            </button>
-
-            <div className="grid gap-7 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10">
-              <div>
-                <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
-                  <div className="aspect-[4/3] bg-slate-100">
-                    <img
-                      src={selectedProduct.image}
-                      alt={selectedProduct.title}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-                  <h2 className="text-lg font-extrabold text-slate-900">
-                    Product description
-                  </h2>
-                  <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-600">
-                    {selectedProduct.description}
-                  </p>
-
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    <div className="rounded-xl bg-slate-50 p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        Category
-                      </p>
-                      <p className="mt-2 text-sm font-bold text-slate-800">
-                        {selectedProduct.category}
-                      </p>
-                    </div>
-                    <div className="rounded-xl bg-slate-50 p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        Listed
-                      </p>
-                      <p className="mt-2 text-sm font-bold text-slate-800">
-                        {formatTime(selectedProduct.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <aside className="space-y-5">
-                <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-7">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-violet-700">
-                    <BadgeCheck size={13} />
-                    Pre-loved product
-                  </span>
-
-                  <h1 className="mt-4 text-2xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-3xl">
-                    {selectedProduct.title}
-                  </h1>
-
-                  <p className="mt-4 text-3xl font-black tracking-tight text-slate-950">
-                    {money(selectedProduct.price)}
-                  </p>
-
-                  <div className="mt-4 flex flex-wrap gap-4 border-b border-slate-100 pb-5 text-xs text-slate-500">
-                    <span className="flex items-center gap-1.5">
-                      <MapPin size={15} className="text-violet-600" />
-                      {selectedProduct.location}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Clock3 size={15} />
-                      {formatTime(selectedProduct.createdAt)}
-                    </span>
-                  </div>
-
-                  <div className="mt-5 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-blue-100 text-violet-700">
-                      <CircleUserRound size={25} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold text-slate-900">
-                        {selectedProduct.seller}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        Listed on SELDOL
-                      </p>
-                    </div>
-                    <BadgeCheck size={20} className="text-violet-600" />
-                  </div>
-
-                  <div className="mt-6 space-y-3">
-                    {selectedProduct.seller !== profileName && (
-                      <button
-                        type="button"
-                        onClick={() => startChat(selectedProduct)}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-violet-600/15 transition hover:bg-violet-700"
-                      >
-                        <MessageCircle size={18} />
-                        Chat with seller
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => startWhatsApp(selectedProduct)}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-bold text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
-                    >
-                      <MessageSquare size={18} />
-                      Contact on WhatsApp
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => startCall(selectedProduct)}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                    >
-                      <Phone size={17} />
-                      Call seller
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => toggleFavorite(selectedProduct.id)}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
-                    >
-                      <Heart
-                        size={17}
-                        fill={
-                          favorites.includes(selectedProduct.id)
-                            ? "currentColor"
-                            : "none"
-                        }
-                      />
-                      {favorites.includes(selectedProduct.id)
-                        ? "Saved to wishlist"
-                        : "Add to wishlist"}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                  <div className="flex gap-3">
-                    <ShieldCheck size={20} className="shrink-0 text-amber-700" />
-                    <div>
-                      <h3 className="text-xs font-bold text-amber-900">
-                        Stay safe while buying
-                      </h3>
-                      <p className="mt-1 text-xs leading-5 text-amber-800">
-                        Inspect the product in person, verify ownership and
-                        avoid sending advance payments to unknown sellers.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </aside>
-            </div>
-          </section>
-        )}
-
-        {/* SELL PRODUCT */}
-        {page === "sell" && (
-          <section className="mx-auto max-w-4xl">
-            <button
-              type="button"
-              onClick={() => showPage("home")}
-              className="mb-6 flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-violet-700"
-            >
-              <ArrowLeft size={17} />
-              Back to home
-            </button>
-
-            <PageHeading
-              eyebrow="Start selling"
-              title="Create your listing"
-              subtitle="Add accurate details so buyers can understand your product and contact you."
-            />
-
-            <form onSubmit={handleSell} className="space-y-6">
-              <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-8">
-                <h2 className="text-lg font-extrabold text-slate-900">
-                  Product photos
-                </h2>
-                <p className="mt-2 text-xs leading-5 text-slate-500">
-                  Upload one clear image. JPG, PNG and WebP are supported. Maximum
-                  size: 2 MB.
-                </p>
-
-                <label className="mt-5 flex min-h-[220px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 transition hover:border-violet-400 hover:bg-violet-50/40">
-                  {newImage ? (
-                    <div className="relative w-full">
-                      <img
-                        src={newImage}
-                        alt="Product preview"
-                        className="mx-auto max-h-[300px] w-full object-contain"
-                      />
-                      <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-slate-950/75 px-4 py-3 text-xs font-semibold text-white">
-                        <ImagePlus size={15} />
-                        Change image
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
-                        <Upload size={24} />
-                      </span>
-                      <span className="mt-4 text-sm font-bold text-slate-800">
-                        Upload product image
-                      </span>
-                      <span className="mt-2 text-xs text-slate-500">
-                        Tap here to choose a photo
-                      </span>
-                    </>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImage}
-                    className="hidden"
-                  />
-                </label>
-
-                {imageName && (
-                  <p className="mt-3 truncate text-xs text-slate-500">
-                    Selected: {imageName}
-                  </p>
                 )}
               </div>
 
-              <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-8">
-                <h2 className="text-lg font-extrabold text-slate-900">
-                  Product information
-                </h2>
-
-                <div className="mt-6 grid gap-5 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <label
-                      htmlFor="product-title"
-                      className="mb-2 block text-xs font-bold text-slate-700"
-                    >
-                      Product title *
-                    </label>
-                    <input
-                      id="product-title"
-                      value={newTitle}
-                      onChange={(event) => setNewTitle(event.target.value)}
-                      placeholder="e.g. iPhone 13 128GB, excellent condition"
-                      maxLength={100}
-                      required
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100"
+              {/* Products Feed */}
+              {filteredProducts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
+                  <Package size={48} className="text-slate-300" />
+                  <h3 className="mt-4 text-base font-bold text-slate-800">No items match your criteria</h3>
+                  <p className="mt-1 text-xs text-slate-500">Try loosening your search keywords or price filters.</p>
+                </div>
+              ) : viewMode === "grid" ? (
+                <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4">
+                  {filteredProducts.map((item) => (
+                    <ProductGridCard
+                      key={item.id}
+                      product={item}
+                      isFav={favorites.includes(item.id)}
+                      onToggleFav={() => toggleFavorite(item.id)}
+                      onOpen={() => openProduct(item)}
                     />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredProducts.map((item) => (
+                    <ProductListCard
+                      key={item.id}
+                      product={item}
+                      isFav={favorites.includes(item.id)}
+                      onToggleFav={() => toggleFavorite(item.id)}
+                      onOpen={() => openProduct(item)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ===================== PRODUCT DETAILS ===================== */}
+        {page === "details" && selectedProduct && (
+          <div className="space-y-6">
+            <button
+              onClick={() => showPage("home")}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 transition hover:text-violet-600"
+            >
+              <ArrowLeft size={16} /> Back to Listings
+            </button>
+
+            <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+              {/* Left Column: Image Slider & Description */}
+              <div className="space-y-6">
+                {/* Images */}
+                <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-2">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-slate-100">
+                    <img
+                      src={selectedProduct.images[activeImageIndex] || selectedProduct.images[0]}
+                      alt={selectedProduct.title}
+                      className="h-full w-full object-contain"
+                    />
+                    {selectedProduct.images.length > 1 && (
+                      <div className="absolute inset-x-2 top-1/2 flex -translate-y-1/2 justify-between">
+                        <button
+                          onClick={() =>
+                            setActiveImageIndex((prev) =>
+                              prev === 0 ? selectedProduct.images.length - 1 : prev - 1
+                            )
+                          }
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur hover:bg-black/80"
+                        >
+                          <ChevronLeft size={18} />
+                        </button>
+                        <button
+                          onClick={() =>
+                            setActiveImageIndex((prev) =>
+                              prev === selectedProduct.images.length - 1 ? 0 : prev + 1
+                            )
+                          }
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur hover:bg-black/80"
+                        >
+                          <ChevronRight size={18} />
+                        </button>
+                      </div>
+                    )}
+                    <span className="absolute bottom-3 right-3 rounded-lg bg-black/60 px-2.5 py-1 text-[10px] font-bold text-white">
+                      {activeImageIndex + 1} / {selectedProduct.images.length}
+                    </span>
                   </div>
 
-                  <div>
-                    <label
-                      htmlFor="product-price"
-                      className="mb-2 block text-xs font-bold text-slate-700"
-                    >
-                      Expected price (₹) *
-                    </label>
-                    <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-violet-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-violet-100">
-                      <IndianRupee size={17} className="text-slate-400" />
-                      <input
-                        id="product-price"
-                        type="number"
-                        min="1"
-                        max="100000000"
-                        step="1"
-                        value={newPrice}
-                        onChange={(event) => setNewPrice(event.target.value)}
-                        placeholder="Enter amount"
-                        required
-                        className="w-full bg-transparent px-2 py-3.5 text-sm outline-none"
-                      />
+                  {/* Thumbnail Row */}
+                  {selectedProduct.images.length > 1 && (
+                    <div className="mt-2 flex gap-2 overflow-x-auto p-1">
+                      {selectedProduct.images.map((img, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setActiveImageIndex(i)}
+                          className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition ${
+                            activeImageIndex === i ? "border-violet-600 ring-2 ring-violet-200" : "border-slate-200 opacity-60"
+                          }`}
+                        >
+                          <img src={img} alt="" className="h-full w-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Details Accordion / Specs */}
+                <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6">
+                  <h3 className="text-base font-extrabold text-slate-900">Description & Specifications</h3>
+                  <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <span className="text-slate-400">Condition</span>
+                      <p className="mt-0.5 font-bold text-slate-800">{selectedProduct.condition}</p>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <span className="text-slate-400">Category</span>
+                      <p className="mt-0.5 font-bold text-slate-800">{selectedProduct.category}</p>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <span className="text-slate-400">Pricing</span>
+                      <p className="mt-0.5 font-bold text-slate-800">
+                        {selectedProduct.isNegotiable ? "Negotiable" : "Fixed"}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <span className="text-slate-400">Posted</span>
+                      <p className="mt-0.5 font-bold text-slate-800">{formatTime(selectedProduct.createdAt)}</p>
                     </div>
                   </div>
 
-                  <div>
-                    <label
-                      htmlFor="product-category"
-                      className="mb-2 block text-xs font-bold text-slate-700"
-                    >
-                      Category *
-                    </label>
-                    <select
-                      id="product-category"
-                      value={newCategory}
-                      onChange={(event) => setNewCategory(event.target.value)}
-                      required
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    >
-                      {CATEGORIES.filter((item) => item.name !== "All").map(
-                        (item) => (
-                          <option key={item.name} value={item.name}>
-                            {item.name}
-                          </option>
-                        ),
+                  <p className="whitespace-pre-line text-sm leading-relaxed text-slate-700">
+                    {selectedProduct.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Column: Pricing & Seller Quick Action */}
+              <div className="space-y-5">
+                <div className="space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-[10px] font-bold text-violet-700">
+                        {selectedProduct.category}
+                      </span>
+                      <h1 className="mt-2 text-2xl font-black text-slate-900 sm:text-3xl">
+                        {money(selectedProduct.price)}
+                      </h1>
+                      {selectedProduct.isNegotiable && (
+                        <span className="text-xs font-semibold text-emerald-600">
+                          ✓ Price is slightly negotiable
+                        </span>
                       )}
-                    </select>
+                    </div>
+                    <button
+                      onClick={() => toggleFavorite(selectedProduct.id)}
+                      className={`flex h-11 w-11 items-center justify-center rounded-2xl border transition ${
+                        favorites.includes(selectedProduct.id)
+                          ? "border-rose-200 bg-rose-50 text-rose-500"
+                          : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      <Heart
+                        size={20}
+                        fill={favorites.includes(selectedProduct.id) ? "currentColor" : "none"}
+                      />
+                    </button>
                   </div>
 
-                  <div className="sm:col-span-2">
-                    <label
-                      htmlFor="product-location"
-                      className="mb-2 block text-xs font-bold text-slate-700"
-                    >
-                      City or area *
-                    </label>
-                    <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-violet-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-violet-100">
-                      <MapPin size={17} className="text-slate-400" />
-                      <input
-                        id="product-location"
-                        value={newLocation}
-                        onChange={(event) => setNewLocation(event.target.value)}
-                        placeholder="e.g. Rohini, Delhi"
-                        maxLength={100}
-                        required
-                        className="w-full bg-transparent px-2 py-3.5 text-sm outline-none"
-                      />
+                  <h2 className="text-base font-bold text-slate-800">{selectedProduct.title}</h2>
+
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <MapPin size={14} className="text-violet-600" />
+                    <span>{selectedProduct.location}</span>
+                  </div>
+
+                  {/* Seller Card */}
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-indigo-600 text-lg font-black text-white">
+                        {selectedProduct.seller[0]}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1">
+                          <h4 className="truncate text-sm font-bold text-slate-900">
+                            {selectedProduct.seller}
+                          </h4>
+                          <BadgeCheck size={16} className="text-violet-600" />
+                        </div>
+                        <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
+                          <span className="flex items-center text-amber-500 font-bold">
+                            <Star size={12} fill="currentColor" className="mr-0.5" />
+                            {selectedProduct.sellerRating || 4.8}
+                          </span>
+                          <span>•</span>
+                          <span>Verified Seller</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="sm:col-span-2">
-                    <label
-                      htmlFor="product-description"
-                      className="mb-2 block text-xs font-bold text-slate-700"
+                  {/* CTAs */}
+                  <div className="space-y-2.5">
+                    {selectedProduct.seller !== profileName && (
+                      <button
+                        onClick={() => startChat(selectedProduct)}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-700 active:scale-95"
+                      >
+                        <MessageCircle size={17} />
+                        Chat With Seller
+                      </button>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => startWhatsApp(selectedProduct)}
+                        className="flex items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 py-3 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
+                      >
+                        <MessageSquare size={16} /> WhatsApp
+                      </button>
+
+                      {selectedProduct.phone ? (
+                        <a
+                          href={`tel:${selectedProduct.phone}`}
+                          className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 py-3 text-xs font-bold text-slate-800 transition hover:bg-slate-100"
+                        >
+                          <Phone size={16} /> Call Seller
+                        </a>
+                      ) : (
+                        <button
+                          disabled
+                          className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 py-3 text-xs font-semibold text-slate-400 opacity-60"
+                        >
+                          <Phone size={14} /> Call Hidden
+                        </button>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={copyProductLink}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
                     >
-                      Description
-                    </label>
-                    <textarea
-                      id="product-description"
-                      value={newDescription}
-                      onChange={(event) =>
-                        setNewDescription(event.target.value)
-                      }
-                      placeholder="Describe condition, age, features and anything a buyer should know..."
-                      rows={5}
-                      maxLength={2000}
-                      className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm leading-6 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100"
-                    />
-                    <p className="mt-2 text-right text-[10px] text-slate-400">
-                      {newDescription.length}/2000
+                      <Share2 size={14} /> Share Listing
+                    </button>
+                  </div>
+                </div>
+
+                {/* Safety advice */}
+                <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-xs text-amber-900">
+                  <ShieldCheck size={20} className="shrink-0 text-amber-700" />
+                  <div>
+                    <strong className="font-bold">SELDOL Safe Trading Tip:</strong>
+                    <p className="mt-0.5 text-amber-800/90 leading-relaxed">
+                      Always meet the seller in public spaces. Test the item thoroughly before paying via UPI or cash.
                     </p>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
 
-              <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-8">
-                <h2 className="text-lg font-extrabold text-slate-900">
-                  Contact details
-                </h2>
-                <p className="mt-2 text-xs leading-5 text-slate-500">
-                  A phone number is optional. Add it if you want to offer direct
-                  calling and WhatsApp contact in this frontend demo.
-                </p>
+        {/* ===================== SELL ITEM FORM ===================== */}
+        {page === "sell" && (
+          <div className="mx-auto max-w-2xl space-y-6">
+            <button
+              onClick={() => showPage("home")}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-violet-600"
+            >
+              <ArrowLeft size={16} /> Cancel & Return
+            </button>
 
-                <div className="mt-5">
-                  <label
-                    htmlFor="product-phone"
-                    className="mb-2 block text-xs font-bold text-slate-700"
-                  >
-                    Phone number
-                  </label>
+            <div>
+              <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Post Free Advertisement</h1>
+              <p className="mt-1 text-xs text-slate-500">
+                Reach thousands of genuine buyers across your city in minutes.
+              </p>
+            </div>
+
+            <form onSubmit={handleSell} className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+              {/* Photo Upload Area */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Upload Photos (Max 5)
+                </label>
+                <div className="mt-2 grid grid-cols-3 gap-3 sm:grid-cols-5">
+                  {newImages.map((img, i) => (
+                    <div key={i} className="group relative aspect-square rounded-2xl border border-slate-200 overflow-hidden bg-slate-50">
+                      <img src={img} alt="" className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeUploadImage(i)}
+                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-white shadow-md transition hover:scale-110"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+
+                  {newImages.length < 5 && (
+                    <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition hover:border-violet-500 hover:bg-violet-50/30 hover:text-violet-600">
+                      <ImagePlus size={24} />
+                      <span className="mt-1 text-[10px] font-bold">Add Photo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleMultipleImages}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              {/* Title & Category */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700">Ad Title *</label>
                   <input
-                    id="product-phone"
-                    type="tel"
-                    inputMode="tel"
-                    value={newPhone}
-                    onChange={(event) => setNewPhone(event.target.value)}
-                    placeholder="Enter your contact number"
-                    maxLength={20}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100"
+                    type="text"
+                    required
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="e.g. Royal Enfield Hunter 350 Dapper Ash, 2023"
+                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-medium outline-none focus:border-violet-500 focus:bg-white"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700">Category *</label>
+                    <select
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold outline-none focus:border-violet-500"
+                    >
+                      {CATEGORIES.filter((c) => c.name !== "All").map((c) => (
+                        <option key={c.name} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700">Condition *</label>
+                    <select
+                      value={newCondition}
+                      onChange={(e) => setNewCondition(e.target.value as ItemCondition)}
+                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold outline-none focus:border-violet-500"
+                    >
+                      <option value="Brand New">Brand New (Unused)</option>
+                      <option value="Like New">Like New (Minimal Use)</option>
+                      <option value="Good">Good (Working fine)</option>
+                      <option value="Fair">Fair (Has wear & tear)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Price & Negotiable Checkbox */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700">Price (₹) *</label>
+                    <div className="mt-1.5 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-violet-500 focus-within:bg-white">
+                      <IndianRupee size={15} className="text-slate-400" />
+                      <input
+                        type="number"
+                        required
+                        value={newPrice}
+                        onChange={(e) => setNewPrice(e.target.value)}
+                        placeholder="Expected Amount"
+                        className="w-full bg-transparent px-2 py-2.5 text-xs font-bold outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center sm:pt-6">
+                    <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={newNegotiable}
+                        onChange={(e) => setNewNegotiable(e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                      />
+                      Price is Negotiable
+                    </label>
+                  </div>
+                </div>
+
+                {/* Location & Phone */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700">Your Location *</label>
+                    <div className="mt-1.5 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-violet-500 focus-within:bg-white">
+                      <MapPin size={15} className="text-slate-400" />
+                      <input
+                        type="text"
+                        required
+                        value={newLocation}
+                        onChange={(e) => setNewLocation(e.target.value)}
+                        placeholder="e.g. Rohini Sector 7, Delhi"
+                        className="w-full bg-transparent px-2 py-2.5 text-xs font-medium outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700">Phone for WhatsApp/Calls</label>
+                    <div className="mt-1.5 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-violet-500 focus-within:bg-white">
+                      <Phone size={15} className="text-slate-400" />
+                      <input
+                        type="tel"
+                        value={newPhone}
+                        onChange={(e) => setNewPhone(e.target.value)}
+                        placeholder="10 digit number"
+                        className="w-full bg-transparent px-2 py-2.5 text-xs font-medium outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700">Description</label>
+                  <textarea
+                    rows={4}
+                    value={newDescription}
+                    onChange={(e) => setNewDescription(e.target.value)}
+                    placeholder="Provide details such as purchase date, condition, included accessories, reason for selling..."
+                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-medium outline-none focus:border-violet-500 focus:bg-white"
                   />
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={() => showPage("home")}
-                  className="rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:-translate-y-0.5 hover:shadow-xl"
-                >
-                  <Plus size={17} />
-                  Publish listing
-                </button>
-              </div>
+              {/* Submit */}
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-violet-600/25 transition hover:brightness-105 active:scale-95"
+              >
+                Post Advertisement Now
+              </button>
             </form>
-          </section>
+          </div>
         )}
 
-        {/* MY ADS */}
+        {/* ===================== MY ADS ===================== */}
         {page === "myads" && (
-          <section>
-            <PageHeading
-              eyebrow="Seller dashboard"
-              title="My listings"
-              subtitle="Manage the products you've posted on this device."
-            />
-
-            <div className="mb-7 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-slate-500">
-                    Total listings
-                  </p>
-                  <Package size={18} className="text-violet-600" />
-                </div>
-                <p className="mt-3 text-3xl font-black text-slate-900">
-                  {ownProducts.length}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">My Listings</h1>
+                <p className="mt-1 text-xs text-slate-500">
+                  Manage the items you've posted on this device.
                 </p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-slate-500">
-                    Asking value
-                  </p>
-                  <IndianRupee size={18} className="text-emerald-600" />
-                </div>
-                <p className="mt-3 text-2xl font-black text-slate-900">
-                  {money(
-                    ownProducts.reduce((total, product) => total + product.price, 0),
-                  )}
-                </p>
-              </div>
-              <div className="col-span-2 rounded-2xl border border-violet-100 bg-gradient-to-r from-violet-50 to-blue-50 p-5 sm:col-span-1">
-                <p className="text-xs font-semibold text-slate-500">
-                  Want to sell more?
-                </p>
-                <button
-                  type="button"
-                  onClick={() => showPage("sell")}
-                  className="mt-3 flex items-center gap-2 text-sm font-bold text-violet-700"
-                >
-                  <Plus size={17} />
-                  Create listing
-                </button>
-              </div>
+              <button
+                onClick={() => showPage("sell")}
+                className="flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-violet-700"
+              >
+                <Plus size={16} /> Post Another
+              </button>
             </div>
 
             {ownProducts.length === 0 ? (
-              <EmptyState
-                icon={Package}
-                title="No listings yet"
-                description="Your products will appear here after you publish your first listing."
-                buttonText="Sell your first product"
-                onClick={() => showPage("sell")}
-              />
+              <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
+                <Package size={48} className="text-slate-300" />
+                <h3 className="mt-4 text-base font-bold text-slate-800">You haven't posted any ads yet</h3>
+                <p className="mt-1 text-xs text-slate-500">Turn your unused electronics, vehicles, or items into quick cash.</p>
+                <button
+                  onClick={() => showPage("sell")}
+                  className="mt-5 rounded-xl bg-violet-600 px-5 py-2.5 text-xs font-bold text-white"
+                >
+                  Create Your First Ad
+                </button>
+              </div>
             ) : (
               <div className="space-y-3">
-                {ownProducts.map((product) => (
-                  <article
-                    key={product.id}
-                    className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center"
+                {ownProducts.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 transition sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <button
-                      type="button"
-                      onClick={() => openProduct(product)}
-                      className="flex min-w-0 flex-1 items-center gap-4 text-left"
-                    >
+                    <div className="flex items-center gap-4">
                       <img
-                        src={product.image}
-                        alt={product.title}
-                        className="h-24 w-24 shrink-0 rounded-xl bg-slate-100 object-cover"
+                        src={item.images[0]}
+                        alt=""
+                        className="h-20 w-20 rounded-xl object-cover bg-slate-100"
                       />
-                      <div className="min-w-0">
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
-                          Published on this device
+                      <div>
+                        <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                          Active Listing
                         </span>
-                        <h3 className="mt-2 truncate text-sm font-bold text-slate-900">
-                          {product.title}
-                        </h3>
-                        <p className="mt-1 text-lg font-extrabold text-slate-900">
-                          {money(product.price)}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {product.location} · {formatTime(product.createdAt)}
+                        <h4 className="mt-1 text-sm font-bold text-slate-900">{item.title}</h4>
+                        <p className="mt-0.5 text-base font-black text-violet-600">{money(item.price)}</p>
+                        <p className="text-[11px] text-slate-400">
+                          {item.location} • {formatTime(item.createdAt)}
                         </p>
                       </div>
-                    </button>
+                    </div>
 
-                    <div className="flex gap-2 sm:flex-col">
+                    <div className="flex items-center gap-2">
                       <button
-                        type="button"
-                        onClick={() => openProduct(product)}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                        onClick={() => openProduct(item)}
+                        className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
                       >
                         View
                       </button>
                       <button
-                        type="button"
-                        onClick={() => deleteProduct(product.id)}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-rose-100 px-3 py-2.5 text-xs font-bold text-rose-600 transition hover:bg-rose-50"
+                        onClick={() => deleteProduct(item.id)}
+                        className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-100"
                       >
-                        <Trash2 size={14} />
-                        Delete
+                        <Trash2 size={14} /> Delete
                       </button>
                     </div>
-                  </article>
+                  </div>
                 ))}
               </div>
             )}
-          </section>
+          </div>
         )}
 
-        {/* WISHLIST */}
+        {/* ===================== WISHLIST ===================== */}
         {page === "wishlist" && (
-          <section>
-            <PageHeading
-              eyebrow="Your saved finds"
-              title="Wishlist"
-              subtitle="Keep the products you love in one place."
-            />
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Saved Wishlist</h1>
+              <p className="mt-1 text-xs text-slate-500">
+                Items you've bookmarked for later consideration.
+              </p>
+            </div>
 
-            {products.filter((product) => favorites.includes(product.id))
-              .length === 0 ? (
-              <EmptyState
-                icon={Heart}
-                title="Your wishlist is empty"
-                description="Tap the heart on any product to save it here for later."
-                buttonText="Explore products"
-                onClick={() => showPage("home")}
-              />
+            {favorites.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
+                <Heart size={44} className="text-slate-300" />
+                <h3 className="mt-4 text-base font-bold text-slate-800">Your wishlist is empty</h3>
+                <p className="mt-1 text-xs text-slate-500">Click the heart icon on any ad to keep it here.</p>
+                <button
+                  onClick={() => showPage("home")}
+                  className="mt-5 rounded-xl bg-violet-600 px-5 py-2.5 text-xs font-bold text-white"
+                >
+                  Explore Products
+                </button>
+              </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4">
                 {products
-                  .filter((product) => favorites.includes(product.id))
-                  .map((product) => (
-                    <ProductCard key={product.id} product={product} />
+                  .filter((p) => favorites.includes(p.id))
+                  .map((item) => (
+                    <ProductGridCard
+                      key={item.id}
+                      product={item}
+                      isFav={true}
+                      onToggleFav={() => toggleFavorite(item.id)}
+                      onOpen={() => openProduct(item)}
+                    />
                   ))}
               </div>
             )}
-          </section>
+          </div>
         )}
 
-        {/* MESSAGES */}
+        {/* ===================== MESSAGES (CHAT) ===================== */}
         {page === "messages" && (
-          <section>
-            <PageHeading
-              eyebrow="Conversations"
-              title="Messages"
-              subtitle="Open a product conversation and try the chat interface."
-            />
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Direct In-App Messages</h1>
+              <p className="mt-1 text-xs text-slate-500">
+                Chat securely with sellers and buyers in real-time demo mode.
+              </p>
+            </div>
 
-            <div className="grid min-h-[480px] overflow-hidden rounded-3xl border border-slate-200 bg-white md:grid-cols-[300px_1fr]">
-              <aside className="border-b border-slate-200 md:border-b-0 md:border-r">
-                <div className="border-b border-slate-100 p-5">
-                  <h2 className="font-extrabold text-slate-900">
-                    Your conversations
-                  </h2>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Demo conversations saved on this device
-                  </p>
+            <div className="grid min-h-[500px] overflow-hidden rounded-3xl border border-slate-200 bg-white md:grid-cols-[300px_1fr]">
+              {/* Left Contacts List */}
+              <div className="border-r border-slate-100 bg-slate-50/50">
+                <div className="border-b border-slate-100 p-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Conversations
+                  </h3>
                 </div>
-
-                <div className="max-h-[450px] overflow-y-auto">
-                  {products
-                    .filter(
-                      (product) =>
-                        product.seller !== profileName ||
-                        chatMessages.some(
-                          (message) => message.productId === product.id,
-                        ),
-                    )
-                    .map((product) => {
-                      const latest = [...chatMessages]
-                        .reverse()
-                        .find((message) => message.productId === product.id);
-
-                      return (
-                        <button
-                          key={product.id}
-                          type="button"
-                          onClick={() => setChatProduct(product)}
-                          className={`flex w-full items-center gap-3 border-b border-slate-100 p-4 text-left transition ${
-                            chatProduct?.id === product.id
-                              ? "bg-violet-50"
-                              : "hover:bg-slate-50"
-                          }`}
-                        >
-                          <img
-                            src={product.image}
-                            alt=""
-                            className="h-11 w-11 shrink-0 rounded-xl bg-slate-100 object-cover"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs font-bold text-slate-900">
-                              {product.seller}
-                            </p>
-                            <p className="mt-1 truncate text-[11px] text-slate-500">
-                              {latest?.text || product.title}
-                            </p>
-                          </div>
-                          {latest && (
-                            <span className="h-2 w-2 shrink-0 rounded-full bg-violet-500" />
-                          )}
-                        </button>
-                      );
-                    })}
+                <div className="divide-y divide-slate-100">
+                  {products.slice(0, 4).map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setChatProduct(p)}
+                      className={`flex w-full items-center gap-3 p-3.5 text-left transition ${
+                        chatProduct?.id === p.id ? "bg-violet-100/60" : "hover:bg-slate-100"
+                      }`}
+                    >
+                      <img src={p.images[0]} alt="" className="h-10 w-10 rounded-xl object-cover" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="truncate text-xs font-bold text-slate-900">{p.seller}</p>
+                          <span className="text-[10px] text-slate-400">Online</span>
+                        </div>
+                        <p className="truncate text-[11px] text-slate-500">{p.title}</p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-              </aside>
+              </div>
 
-              <div className="flex min-h-[440px] flex-col">
+              {/* Chat View */}
+              <div className="flex flex-col justify-between">
                 {chatProduct ? (
                   <>
-                    <div className="flex items-center gap-3 border-b border-slate-100 p-4 sm:p-5">
-                      <button
-                        type="button"
-                        onClick={() => setChatProduct(null)}
-                        className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden"
-                        aria-label="Back to conversations"
-                      >
-                        <ArrowLeft size={18} />
-                      </button>
-                      <img
-                        src={chatProduct.image}
-                        alt=""
-                        className="h-11 w-11 rounded-xl bg-slate-100 object-cover"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-slate-900">
-                          {chatProduct.seller}
-                        </p>
-                        <p className="mt-1 truncate text-xs text-slate-500">
-                          {chatProduct.title} · {money(chatProduct.price)}
-                        </p>
+                    {/* Header */}
+                    <div className="flex items-center justify-between border-b border-slate-100 p-4">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={chatProduct.images[0]}
+                          alt=""
+                          className="h-10 w-10 rounded-xl object-cover"
+                        />
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900">{chatProduct.seller}</h4>
+                          <p className="text-[11px] font-semibold text-violet-600">
+                            {chatProduct.title} • {money(chatProduct.price)}
+                          </p>
+                        </div>
                       </div>
+                      <button
+                        onClick={() => openProduct(chatProduct)}
+                        className="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
+                      >
+                        View Ad
+                      </button>
                     </div>
 
-                    <div className="flex-1 space-y-4 bg-slate-50/60 p-4 sm:p-6">
-                      <div className="mx-auto max-w-sm rounded-2xl border border-amber-100 bg-amber-50 p-4 text-center">
-                        <MessageCircle
-                          size={22}
-                          className="mx-auto text-amber-700"
-                        />
-                        <p className="mt-2 text-xs font-bold text-amber-900">
-                          Frontend chat demo
-                        </p>
-                        <p className="mt-1 text-[11px] leading-5 text-amber-800">
-                          Messages are saved only on this device. They are not
-                          delivered to the seller.
-                        </p>
+                    {/* Chat Bubble Area */}
+                    <div className="flex-1 space-y-3 overflow-y-auto p-4 max-h-[350px]">
+                      <div className="rounded-xl bg-violet-50 p-3 text-center text-[11px] text-violet-800">
+                        🔒 Safe Chat initiated for <strong>{chatProduct.title}</strong>. Never send advance money before checking the item.
                       </div>
 
                       {chatMessages
-                        .filter(
-                          (message) =>
-                            message.productId === chatProduct.id,
-                        )
-                        .map((message) => (
-                          <div
-                            key={message.id}
-                            className={`flex ${
-                              message.sender === profileName
-                                ? "justify-end"
-                                : "justify-start"
-                            }`}
-                          >
+                        .filter((m) => m.productId === chatProduct.id)
+                        .map((msg) => {
+                          const isMe = msg.sender === profileName;
+                          return (
                             <div
-                              className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                                message.sender === profileName
-                                  ? "rounded-br-sm bg-violet-600 text-white"
-                                  : "rounded-bl-sm border border-slate-200 bg-white text-slate-800"
-                              }`}
+                              key={msg.id}
+                              className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                             >
-                              <p className="break-words text-sm leading-6">
-                                {message.text}
-                              </p>
-                              <p
-                                className={`mt-1 text-[10px] ${
-                                  message.sender === profileName
-                                    ? "text-violet-200"
-                                    : "text-slate-400"
+                              <div
+                                className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-xs ${
+                                  isMe
+                                    ? "rounded-br-none bg-violet-600 text-white"
+                                    : "rounded-bl-none bg-slate-100 text-slate-800"
                                 }`}
                               >
-                                {new Date(message.time).toLocaleTimeString(
-                                  "en-IN",
-                                  {
+                                <p className="leading-relaxed">{msg.text}</p>
+                                <span
+                                  className={`mt-1 block text-[9px] ${
+                                    isMe ? "text-violet-200 text-right" : "text-slate-400"
+                                  }`}
+                                >
+                                  {new Date(msg.time).toLocaleTimeString([], {
                                     hour: "2-digit",
                                     minute: "2-digit",
-                                  },
-                                )}
-                              </p>
+                                  })}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                     </div>
 
-                    <form
-                      onSubmit={sendChat}
-                      className="flex gap-2 border-t border-slate-100 p-4"
-                    >
+                    {/* Input */}
+                    <form onSubmit={sendChat} className="flex gap-2 border-t border-slate-100 p-3">
                       <input
                         value={chatText}
-                        onChange={(event) => setChatText(event.target.value)}
-                        placeholder="Type a demo message..."
-                        maxLength={1000}
-                        className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-violet-400 focus:bg-white"
+                        onChange={(e) => setChatText(e.target.value)}
+                        placeholder="Type message to seller..."
+                        className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs outline-none focus:border-violet-500 focus:bg-white"
                       />
                       <button
                         type="submit"
                         disabled={!chatText.trim()}
-                        className="flex h-11 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-40"
-                        aria-label="Send message"
+                        className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 text-white transition hover:bg-violet-700 disabled:opacity-40"
                       >
-                        <Send size={17} />
+                        <Send size={16} />
                       </button>
                     </form>
                   </>
                 ) : (
-                  <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
-                      <MessageCircle size={29} />
-                    </div>
-                    <h3 className="mt-5 text-lg font-bold text-slate-900">
-                      Your conversations
-                    </h3>
-                    <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">
-                      Select a product conversation to open the demo chat.
-                      Real-time messaging will need a backend.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => showPage("home")}
-                      className="mt-5 rounded-xl bg-violet-600 px-5 py-3 text-sm font-bold text-white hover:bg-violet-700"
-                    >
-                      Browse products
-                    </button>
+                  <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-slate-400">
+                    <MessageCircle size={36} />
+                    <p className="mt-2 text-xs font-semibold">Select an item conversation from the left.</p>
                   </div>
                 )}
               </div>
             </div>
-          </section>
+          </div>
         )}
 
-        {/* PROFILE */}
+        {/* ===================== USER PROFILE ===================== */}
         {page === "profile" && (
-          <section className="mx-auto max-w-4xl">
-            <PageHeading
-              eyebrow="Your account"
-              title="My profile"
-              subtitle="Manage your local demo profile and contact details."
-            />
-
-            <div className="mb-6 overflow-hidden rounded-3xl bg-gradient-to-br from-[#211b4e] via-violet-800 to-blue-700 p-6 text-white sm:p-9">
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-                <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/20 bg-white/10 text-white backdrop-blur">
-                  <CircleUserRound size={43} />
-                </div>
-                <div>
-                  <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-100">
-                    Local demo profile
-                  </span>
-                  <h2 className="mt-3 text-2xl font-extrabold">
-                    {profileName}
-                  </h2>
-                  <p className="mt-1 flex items-center gap-1.5 text-sm text-indigo-100/80">
-                    <MapPin size={15} />
-                    {profileCity}
-                  </p>
-                </div>
-                <div className="sm:ml-auto">
-                  <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-center">
-                    <p className="text-2xl font-black">{ownProducts.length}</p>
-                    <p className="mt-1 text-[10px] font-semibold text-indigo-100">
-                      Your listings
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <form
-              onSubmit={saveProfile}
-              className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-8"
-            >
-              <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
-                  <Settings size={21} />
-                </div>
-                <div>
-                  <h2 className="font-extrabold text-slate-900">
-                    Personal information
-                  </h2>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Your information is stored locally in this browser.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="profile-name"
-                    className="mb-2 block text-xs font-bold text-slate-700"
-                  >
-                    Display name
-                  </label>
-                  <input
-                    id="profile-name"
-                    value={profileName}
-                    onChange={(event) => {
-                      setProfileName(event.target.value);
-                      setProfileSaved(false);
-                    }}
-                    maxLength={80}
-                    required
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="profile-city"
-                    className="mb-2 block text-xs font-bold text-slate-700"
-                  >
-                    City
-                  </label>
-                  <input
-                    id="profile-city"
-                    value={profileCity}
-                    onChange={(event) => {
-                      setProfileCity(event.target.value);
-                      setProfileSaved(false);
-                    }}
-                    maxLength={100}
-                    required
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="profile-phone"
-                    className="mb-2 block text-xs font-bold text-slate-700"
-                  >
-                    Contact number
-                  </label>
-                  <input
-                    id="profile-phone"
-                    type="tel"
-                    inputMode="tel"
-                    value={profilePhone}
-                    onChange={(event) => {
-                      setProfilePhone(event.target.value);
-                      setProfileSaved(false);
-                    }}
-                    maxLength={20}
-                    placeholder="Optional"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <button
-                  type="submit"
-                  className="flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-violet-600/15 transition hover:bg-violet-700"
-                >
-                  <CheckCircle2 size={17} />
-                  Save profile
-                </button>
-                {profileSaved && (
-                  <span className="text-xs font-semibold text-emerald-700">
-                    Profile saved on this device.
-                  </span>
-                )}
-              </div>
-            </form>
-
-            <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-              <div className="flex gap-3">
-                <ShieldCheck size={21} className="shrink-0 text-amber-700" />
-                <div>
-                  <h3 className="text-sm font-bold text-amber-900">
-                    Demo version: no account login yet
-                  </h3>
-                  <p className="mt-2 text-xs leading-6 text-amber-800">
-                    This profile is saved only in your current browser. It is
-                    not an authenticated account and will not sync across
-                    different devices. Account registration and secure cloud
-                    storage can be added in the backend phase.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="mt-10 border-t border-slate-200 bg-white">
-        <div className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10">
-          <div className="grid gap-9 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mx-auto max-w-xl space-y-6">
             <div>
-              <button
-                type="button"
-                onClick={() => showPage("home")}
-                className="flex items-center gap-2"
-              >
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-blue-600 text-white">
-                  <ShoppingBag size={19} />
-                </span>
-                <span className="text-xl font-black tracking-tight text-slate-950">
-                  SEL<span className="text-violet-600">DOL</span>
-                </span>
-              </button>
-              <p className="mt-4 max-w-xs text-xs leading-6 text-slate-500">
-                A modern second-hand marketplace concept designed to help
-                people discover products and connect with sellers across India.
+              <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Seller Profile</h1>
+              <p className="mt-1 text-xs text-slate-500">
+                Update your public name, primary city, and verified contact number.
               </p>
             </div>
 
-            <div>
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
-                Marketplace
-              </h3>
-              <div className="mt-4 space-y-3">
-                <button
-                  type="button"
-                  onClick={() => showPage("home")}
-                  className="block text-xs text-slate-500 hover:text-violet-700"
-                >
-                  Browse products
-                </button>
-                <button
-                  type="button"
-                  onClick={() => showPage("sell")}
-                  className="block text-xs text-slate-500 hover:text-violet-700"
-                >
-                  Sell an item
-                </button>
-                <button
-                  type="button"
-                  onClick={() => showPage("wishlist")}
-                  className="block text-xs text-slate-500 hover:text-violet-700"
-                >
-                  My wishlist
-                </button>
+            <form onSubmit={saveProfile} className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center gap-4 border-b border-slate-100 pb-5">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-2xl font-black text-white">
+                  {profileName[0]}
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">{profileName}</h3>
+                  <p className="text-xs text-slate-400">{profileCity}</p>
+                </div>
               </div>
-            </div>
 
-            <div>
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
-                Your account
-              </h3>
-              <div className="mt-4 space-y-3">
-                <button
-                  type="button"
-                  onClick={() => showPage("myads")}
-                  className="block text-xs text-slate-500 hover:text-violet-700"
-                >
-                  My listings
-                </button>
-                <button
-                  type="button"
-                  onClick={() => showPage("messages")}
-                  className="block text-xs text-slate-500 hover:text-violet-700"
-                >
-                  Messages
-                </button>
-                <button
-                  type="button"
-                  onClick={() => showPage("profile")}
-                  className="block text-xs text-slate-500 hover:text-violet-700"
-                >
-                  My profile
-                </button>
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Display Name</label>
+                <input
+                  type="text"
+                  required
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold outline-none focus:border-violet-500"
+                />
               </div>
-            </div>
 
-            <div>
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
-                Smart shopping
-              </h3>
-              <div className="mt-4 space-y-3 text-xs leading-5 text-slate-500">
-                <p className="flex items-start gap-2">
-                  <ShieldCheck size={15} className="mt-0.5 shrink-0 text-emerald-600" />
-                  Meet sellers safely and inspect items before paying.
-                </p>
-                <p className="flex items-start gap-2">
-                  <Heart size={15} className="mt-0.5 shrink-0 text-violet-600" />
-                  Save interesting finds to your wishlist.
-                </p>
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Primary City / State</label>
+                <input
+                  type="text"
+                  required
+                  value={profileCity}
+                  onChange={(e) => setProfileCity(e.target.value)}
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold outline-none focus:border-violet-500"
+                />
               </div>
-            </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Contact Number</label>
+                <input
+                  type="tel"
+                  value={profilePhone}
+                  onChange={(e) => setProfilePhone(e.target.value)}
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold outline-none focus:border-violet-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-violet-600 py-3 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-violet-600/20 hover:bg-violet-700 active:scale-95"
+              >
+                Save Profile
+              </button>
+            </form>
           </div>
+        )}
+      </main>
 
-          <div className="mt-9 flex flex-col gap-3 border-t border-slate-100 pt-5 text-[10px] text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-            <p>© {new Date().getFullYear()} SELDOL. All rights reserved.</p>
-            <p>Buy smart. Sell easy. Give products a second life.</p>
-          </div>
-        </div>
-      </footer>
-
-      {/* Mobile bottom navigation */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-slate-200 bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] pt-2 backdrop-blur-xl sm:hidden">
+      {/* Mobile Bottom Floating Nav */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-slate-200 bg-white/95 py-2 backdrop-blur-lg md:hidden">
         {[
-          { name: "Home", target: "home" as PageName, icon: LayoutGrid },
-          { name: "Wishlist", target: "wishlist" as PageName, icon: Heart },
-          { name: "Sell", target: "sell" as PageName, icon: Plus },
-          { name: "Messages", target: "messages" as PageName, icon: MessageCircle },
-          { name: "Profile", target: "profile" as PageName, icon: UserRound },
+          { label: "Home", p: "home" as PageName, icon: LayoutGrid },
+          { label: "Wishlist", p: "wishlist" as PageName, icon: Heart, count: favorites.length },
+          { label: "Sell", p: "sell" as PageName, icon: Plus, isAction: true },
+          { label: "Chats", p: "messages" as PageName, icon: MessageCircle },
+          { label: "Profile", p: "profile" as PageName, icon: UserRound },
         ].map((item) => {
           const Icon = item.icon;
-          const active = page === item.target;
+          const isActive = page === item.p;
+
+          if (item.isAction) {
+            return (
+              <button
+                key={item.label}
+                onClick={() => showPage(item.p)}
+                className="flex flex-col items-center justify-center text-[10px] font-bold text-white"
+              >
+                <div className="flex h-10 w-10 -translate-y-2 items-center justify-center rounded-full bg-violet-600 shadow-lg shadow-violet-600/30">
+                  <Icon size={20} strokeWidth={3} />
+                </div>
+                <span className="-translate-y-1 text-slate-800">{item.label}</span>
+              </button>
+            );
+          }
 
           return (
             <button
-              key={item.name}
-              type="button"
-              onClick={() => showPage(item.target)}
-              className={`flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-bold transition ${
-                active ? "text-violet-700" : "text-slate-400"
+              key={item.label}
+              onClick={() => showPage(item.p)}
+              className={`relative flex flex-col items-center justify-center text-[10px] font-bold transition ${
+                isActive ? "text-violet-600" : "text-slate-400"
               }`}
             >
-              <span
-                className={`flex h-8 w-9 items-center justify-center rounded-xl ${
-                  item.target === "sell"
-                    ? "bg-gradient-to-r from-violet-600 to-blue-600 text-white shadow-md shadow-violet-600/20"
-                    : active
-                      ? "bg-violet-50"
-                      : ""
-                }`}
-              >
-                <Icon size={19} />
-              </span>
-              {item.name}
+              <Icon size={20} />
+              <span className="mt-1">{item.label}</span>
+              {Boolean(item.count) && (
+                <span className="absolute -top-1 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white">
+                  {item.count}
+                </span>
+              )}
             </button>
           );
         })}
       </nav>
 
-      {/* Toast notification */}
+      {/* Floating Global Toast */}
       {notice && (
-        <div
-          role="status"
-          className="fixed bottom-24 left-1/2 z-50 flex max-w-[90vw] -translate-x-1/2 items-center gap-3 rounded-2xl border border-slate-700 bg-slate-950 px-5 py-3.5 text-sm font-semibold text-white shadow-2xl sm:bottom-6"
-        >
-          <CheckCircle2 size={18} className="shrink-0 text-emerald-400" />
+        <div className="fixed bottom-20 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-xs font-bold text-white shadow-2xl md:bottom-6">
+          <CheckCircle2 size={16} className="text-emerald-400" />
           <span>{notice}</span>
-          <button
-            type="button"
-            onClick={() => setNotice("")}
-            aria-label="Dismiss notification"
-            className="ml-2 text-slate-400 hover:text-white"
-          >
-            <X size={16} />
-          </button>
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Mobile bottom-nav spacing */}
-      <div className="h-20 sm:hidden" />
+// ----------------- SUB COMPONENTS -----------------
+
+function ProductGridCard({
+  product,
+  isFav,
+  onToggleFav,
+  onOpen,
+}: {
+  product: Product;
+  isFav: boolean;
+  onToggleFav: () => void;
+  onOpen: () => void;
+}) {
+  return (
+    <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white transition hover:-translate-y-1 hover:border-violet-300 hover:shadow-xl hover:shadow-violet-950/5">
+      {/* Thumbnail */}
+      <div className="relative aspect-[4/3] w-full cursor-pointer overflow-hidden bg-slate-100" onClick={onOpen}>
+        <img
+          src={product.images[0]}
+          alt={product.title}
+          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+        />
+        {product.isFeatured && (
+          <span className="absolute left-2.5 top-2.5 rounded-lg bg-amber-400 px-2 py-0.5 text-[9px] font-black uppercase text-amber-950 shadow-sm">
+            FEATURED
+          </span>
+        )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFav();
+          }}
+          className={`absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-md transition ${
+            isFav ? "bg-rose-500 text-white" : "bg-white/80 text-slate-700 hover:bg-white"
+          }`}
+        >
+          <Heart size={14} fill={isFav ? "currentColor" : "none"} />
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="flex flex-1 flex-col justify-between p-3.5">
+        <div>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase text-slate-400">{product.category}</span>
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-600">
+              {product.condition}
+            </span>
+          </div>
+          <h3
+            onClick={onOpen}
+            className="mt-1 line-clamp-1 cursor-pointer text-xs font-bold text-slate-800 transition hover:text-violet-600"
+          >
+            {product.title}
+          </h3>
+          <p className="mt-1.5 text-base font-black text-slate-900">{money(product.price)}</p>
+        </div>
+
+        <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-[10px] text-slate-400">
+          <span className="truncate max-w-[90px]">{product.location.split(",")[0]}</span>
+          <span>{formatTime(product.createdAt)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductListCard({
+  product,
+  isFav,
+  onToggleFav,
+  onOpen,
+}: {
+  product: Product;
+  isFav: boolean;
+  onToggleFav: () => void;
+  onOpen: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-white p-3.5 transition hover:border-violet-300 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex cursor-pointer items-center gap-3.5" onClick={onOpen}>
+        <img
+          src={product.images[0]}
+          alt=""
+          className="h-20 w-20 shrink-0 rounded-xl object-cover bg-slate-100"
+        />
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase text-violet-600">{product.category}</span>
+            <span className="text-slate-300">•</span>
+            <span className="text-[10px] font-bold text-slate-500">{product.condition}</span>
+          </div>
+          <h3 className="text-sm font-bold text-slate-900">{product.title}</h3>
+          <p className="mt-0.5 text-base font-black text-slate-900">{money(product.price)}</p>
+          <p className="text-[11px] text-slate-400">{product.location}</p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onToggleFav}
+          className={`flex h-9 w-9 items-center justify-center rounded-xl border ${
+            isFav ? "border-rose-200 bg-rose-50 text-rose-500" : "border-slate-200 text-slate-600"
+          }`}
+        >
+          <Heart size={16} fill={isFav ? "currentColor" : "none"} />
+        </button>
+        <button
+          onClick={onOpen}
+          className="rounded-xl bg-violet-600 px-4 py-2 text-xs font-bold text-white hover:bg-violet-700"
+        >
+          View Details
+        </button>
+      </div>
     </div>
   );
 }
