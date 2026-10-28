@@ -39,7 +39,18 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-
+      - name: Check generated pages
+        run: |
+          echo "Checking exported files..."
+          find out -maxdepth 3 -type f | sort
+          echo "Checking login page..."
+          if [ -f out/login.html ]; then
+            echo "FOUND: out/login.html"
+          elif [ -f out/login/index.html ]; then
+            echo "FOUND: out/login/index.html"
+          else
+            echo "LOGIN PAGE NOT FOUND"
+          fi
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
         with:
