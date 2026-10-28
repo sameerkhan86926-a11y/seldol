@@ -87,6 +87,18 @@ type ChatMessage = {
   created_at: string;
 };
 
+type ChatThread = {
+  key: string;
+  productId: string;
+  productTitle: string;
+  productImage: string;
+  price: number;
+  otherUserId: string;
+  otherUserName: string;
+  lastMessage: string;
+  lastTime: string;
+};
+
 const CATEGORIES = [
   { name: "All", icon: LayoutGrid },
   { name: "Mobiles", icon: Smartphone },
@@ -157,11 +169,21 @@ export default function SeldolMarketplace() {
   const [profileName, setProfileName] = useState("Guest");
   const [profilePhone, setProfilePhone] = useState("");
 
-  // Real Realtime Chat State
-  const [chatProduct, setChatProduct] = useState<Product | null>(null);
+  // 1-on-1 Dedicated Chat State
+  const [activeChat, setActiveChat] = useState<{
+    productId: string;
+    productTitle: string;
+    productImage: string;
+    otherUserId: string;
+    otherUserName: string;
+    price: number;
+  } | null>(null);
+
+  const [chatThreads, setChatThreads] = useState<ChatThread[]>([]);
   const [chatText, setChatText] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sendingMsg, setSendingMsg] = useState(false);
+  const [loadingThreads, setLoadingThreads] = useState(false);
 
   // 1. Session & Live Data Fetching
   useEffect(() => {
@@ -175,6 +197,7 @@ export default function SeldolMarketplace() {
         setProfileName(u.user_metadata?.full_name || u.email?.split("@")[0] || "SELDOL Member");
         setProfilePhone(u.user_metadata?.phone || "");
         fetchWishlist(u.id);
+        fetchUserChatThreads(u.id);
       }
     }
 
@@ -191,9 +214,12 @@ export default function SeldolMarketplace() {
         setProfileName(u.user_metadata?.full_name || u.email?.split("@")[0] || "SELDOL Member");
         setProfilePhone(u.user_metadata?.phone || "");
         fetchWishlist(u.id);
+        fetchUserChatThreads(u.id);
       } else {
         setUser(null);
         setFavorites([]);
+        setChatThreads([]);
+        setActiveChat(null);
       }
     });
 
@@ -259,31 +285,105 @@ export default function SeldolMarketplace() {
     }
   }
 
-  // 4. Realtime Chat Listener
-  useEffect(() => {
-    if (!chatProduct || !user) return;
+  // 4. Fetch Isolated Chat Threads (Separated by Product + Other User)
+  const fetchUserChatThreads = async (currentUserId: string) => {
+    setLoadingThreads(true);
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .select(`
+          id,
+          product_id,
+          sender_id,
+          receiver_id,
+          content,
+          created_at,
+          products (id, title, price, images, user_id),
+          sender:profiles!messages_sender_id_fkey (id, full_name),
+          receiver:profiles!messages_receiver_id_fkey (id, full_name)
+        `)
+        .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
+        .order("created_at", { ascending: false });
 
-    supabase
-      .from("messages")
-      .select("*")
-      .eq("product_id", chatProduct.id)
-      .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        if (data) setMessages(data as ChatMessage[]);
-      });
+      if (error) throw error;
+
+      if (data) {
+        const threadMap = new Map<string, ChatThread>();
+
+        data.forEach((m: any) => {
+          const isSender = m.sender_id === currentUserId;
+          const otherId = isSender ? m.receiver_id : m.sender_id;
+          const otherName = isSender
+            ? m.receiver?.full_name || "User"
+            : m.sender?.full_name || "User";
+
+          const key = `${m.product_id}_${otherId}`;
+
+          if (!threadMap.has(key)) {
+            threadMap.set(key, {
+              key,
+              productId: m.product_id,
+              productTitle: m.products?.title || "Product Listing",
+              productImage: m.products?.images?.[0] || "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=300&q=80",
+              price: Number(m.products?.price) || 0,
+              otherUserId: otherId,
+              otherUserName: otherName,
+              lastMessage: m.content,
+              lastTime: m.created_at,
+            });
+          }
+        });
+
+        setChatThreads(Array.from(threadMap.values()));
+      }
+    } catch (err: any) {
+      console.error("Threads fetch error:", err.message);
+    } finally {
+      setLoadingThreads(false);
+    }
+  };
+
+  // 5. Realtime 1-on-1 Messages Listener (Strict Product + User Matching)
+  useEffect(() => {
+    if (!activeChat || !user) return;
+
+    // Load initial 1-on-1 history
+    const loadConversation = async () => {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("product_id", activeChat.productId)
+        .or(
+          `and(sender_id.eq.${user.id},receiver_id.eq.${activeChat.otherUserId}),and(sender_id.eq.${activeChat.otherUserId},receiver_id.eq.${user.id})`
+        )
+        .order("created_at", { ascending: true });
+
+      if (!error && data) {
+        setMessages(data as ChatMessage[]);
+      }
+    };
+
+    void loadConversation();
 
     const channel = supabase
-      .channel(`chat_${chatProduct.id}`)
+      .channel(`chat_${activeChat.productId}_${user.id}_${activeChat.otherUserId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "messages",
-          filter: `product_id=eq.${chatProduct.id}`,
+          filter: `product_id=eq.${activeChat.productId}`,
         },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as ChatMessage]);
+          const newMsg = payload.new as ChatMessage;
+          const isRelevant =
+            (newMsg.sender_id === user.id && newMsg.receiver_id === activeChat.otherUserId) ||
+            (newMsg.sender_id === activeChat.otherUserId && newMsg.receiver_id === user.id);
+
+          if (isRelevant) {
+            setMessages((prev) => [...prev, newMsg]);
+          }
         }
       )
       .subscribe();
@@ -291,7 +391,7 @@ export default function SeldolMarketplace() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [chatProduct, user]);
+  }, [activeChat, user]);
 
   useEffect(() => {
     if (!notice) return;
@@ -338,6 +438,9 @@ export default function SeldolMarketplace() {
   const showPage = (nextPage: PageName) => {
     setPage(nextPage);
     setMobileMenu(false);
+    if (nextPage === "messages" && user) {
+      fetchUserChatThreads(user.id);
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -367,7 +470,6 @@ export default function SeldolMarketplace() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Fixed Stable Multiple Images Selector with Base64 Previews
   const handleMultipleImages = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -399,7 +501,6 @@ export default function SeldolMarketplace() {
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Fixed Ad Publisher: Uploads to Storage, Saves DB record
   const handleSell = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -520,37 +621,63 @@ export default function SeldolMarketplace() {
     await supabase.auth.signOut();
     setUser(null);
     setFavorites([]);
+    setChatThreads([]);
+    setActiveChat(null);
     setNotice("Logged out.");
     showPage("home");
   };
 
+  // Launch 1-on-1 Chat Session
   const startChat = (product: Product) => {
     if (!user) {
       setNotice("Please log in to chat with the seller!");
       return;
     }
-    setChatProduct(product);
+    if (user.id === product.userId) {
+      setNotice("You cannot chat with your own listing!");
+      return;
+    }
+
+    setActiveChat({
+      productId: product.id,
+      productTitle: product.title,
+      productImage: product.images[0],
+      price: product.price,
+      otherUserId: product.userId,
+      otherUserName: product.seller,
+    });
+
     setPage("messages");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Safe Message Dispatch (Targeted Receiver)
   const sendChat = async (e: FormEvent) => {
     e.preventDefault();
-    if (!chatText.trim() || !chatProduct || !user || sendingMsg) return;
+    if (!chatText.trim() || !activeChat || !user || sendingMsg) return;
 
     setSendingMsg(true);
     const content = chatText.trim();
     setChatText("");
 
     try {
-      const { error } = await supabase.from("messages").insert({
-        product_id: chatProduct.id,
-        sender_id: user.id,
-        receiver_id: chatProduct.userId,
-        content: content,
-      });
+      const { data, error } = await supabase
+        .from("messages")
+        .insert({
+          product_id: activeChat.productId,
+          sender_id: user.id,
+          receiver_id: activeChat.otherUserId,
+          content: content,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      if (data) {
+        setMessages((prev) => [...prev, data as ChatMessage]);
+        fetchUserChatThreads(user.id);
+      }
     } catch (err: any) {
       console.error("Message send error:", err);
       setNotice("Failed to send message: " + err.message);
@@ -1528,42 +1655,78 @@ export default function SeldolMarketplace() {
           </div>
         )}
 
-        {/* ===================== REALTIME CHAT ===================== */}
+        {/* ===================== REALTIME 1-ON-1 MESSAGES ===================== */}
         {page === "messages" && (
           <div className="space-y-6">
             <div>
-              <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Direct Realtime Messages</h1>
+              <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Direct Private Messages</h1>
               <p className="mt-1 text-xs text-slate-500">
-                Live Supabase WebSocket communication with sellers and buyers.
+                1-on-1 private conversations between buyers and sellers.
               </p>
             </div>
 
-            <div className="grid min-h-[500px] overflow-hidden rounded-3xl border border-slate-200 bg-white md:grid-cols-[300px_1fr]">
+            <div className="grid min-h-[520px] overflow-hidden rounded-3xl border border-slate-200 bg-white md:grid-cols-[320px_1fr]">
+              {/* Left Column: Distinct Conversation Threads */}
               <div className="border-r border-slate-100 bg-slate-50/50">
                 <div className="border-b border-slate-100 p-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                    Conversations
+                    Your Inboxes ({chatThreads.length})
                   </h3>
                 </div>
-                <div className="divide-y divide-slate-100">
-                  {products.length === 0 ? (
-                    <p className="p-4 text-xs text-slate-400">No active products found.</p>
+                <div className="divide-y divide-slate-100 overflow-y-auto max-h-[500px]">
+                  {loadingThreads ? (
+                    <div className="flex flex-col items-center justify-center p-8 text-slate-400">
+                      <Loader2 size={24} className="animate-spin text-violet-600" />
+                      <p className="mt-2 text-xs font-bold">Loading inboxes...</p>
+                    </div>
+                  ) : chatThreads.length === 0 ? (
+                    <div className="p-6 text-center text-xs text-slate-400">
+                      No chat conversations yet. Click &quot;Chat With Seller&quot; on any listing to begin.
+                    </div>
                   ) : (
-                    products.slice(0, 8).map((p) => (
+                    chatThreads.map((thread) => (
                       <button
-                        key={p.id}
-                        onClick={() => setChatProduct(p)}
+                        key={thread.key}
+                        onClick={() =>
+                          setActiveChat({
+                            productId: thread.productId,
+                            productTitle: thread.productTitle,
+                            productImage: thread.productImage,
+                            price: thread.price,
+                            otherUserId: thread.otherUserId,
+                            otherUserName: thread.otherUserName,
+                          })
+                        }
                         className={`flex w-full items-center gap-3 p-3.5 text-left transition ${
-                          chatProduct?.id === p.id ? "bg-violet-100/60" : "hover:bg-slate-100"
+                          activeChat?.productId === thread.productId &&
+                          activeChat?.otherUserId === thread.otherUserId
+                            ? "bg-violet-100/70"
+                            : "hover:bg-slate-100"
                         }`}
                       >
-                        <img src={p.images[0]} alt="" className="h-10 w-10 rounded-xl object-cover bg-slate-100" />
+                        <img
+                          src={thread.productImage}
+                          alt=""
+                          className="h-11 w-11 rounded-xl object-cover bg-slate-100"
+                        />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between">
-                            <p className="truncate text-xs font-bold text-slate-900">{p.seller}</p>
-                            <span className="text-[10px] text-emerald-600 font-bold">Online</span>
+                            <p className="truncate text-xs font-bold text-slate-900">
+                              {thread.otherUserName}
+                            </p>
+                            <span className="text-[10px] text-slate-400">
+                              {new Date(thread.lastTime).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
                           </div>
-                          <p className="truncate text-[11px] text-slate-500">{p.title}</p>
+                          <p className="truncate text-[11px] font-semibold text-violet-600">
+                            {thread.productTitle}
+                          </p>
+                          <p className="truncate text-[10px] text-slate-500">
+                            {thread.lastMessage}
+                          </p>
                         </div>
                       </button>
                     ))
@@ -1571,34 +1734,31 @@ export default function SeldolMarketplace() {
                 </div>
               </div>
 
+              {/* Right Column: Private Chat Box */}
               <div className="flex flex-col justify-between">
-                {chatProduct ? (
+                {activeChat ? (
                   <>
                     <div className="flex items-center justify-between border-b border-slate-100 p-4">
                       <div className="flex items-center gap-3">
                         <img
-                          src={chatProduct.images[0]}
+                          src={activeChat.productImage}
                           alt=""
-                          className="h-10 w-10 rounded-xl object-cover"
+                          className="h-10 w-10 rounded-xl object-cover bg-slate-100"
                         />
                         <div>
-                          <h4 className="text-xs font-bold text-slate-900">{chatProduct.seller}</h4>
+                          <h4 className="text-xs font-bold text-slate-900">
+                            {activeChat.otherUserName}
+                          </h4>
                           <p className="text-[11px] font-semibold text-violet-600">
-                            {chatProduct.title} • {money(chatProduct.price)}
+                            {activeChat.productTitle} • {money(activeChat.price)}
                           </p>
                         </div>
                       </div>
-                      <button
-                        onClick={() => openProduct(chatProduct)}
-                        className="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
-                      >
-                        View Ad
-                      </button>
                     </div>
 
-                    <div className="flex-1 space-y-3 overflow-y-auto p-4 max-h-[350px]">
-                      <div className="rounded-xl bg-violet-50 p-3 text-center text-[11px] text-violet-800">
-                        ⚡ Realtime Chat connected for <strong>{chatProduct.title}</strong>.
+                    <div className="flex-1 space-y-3 overflow-y-auto p-4 max-h-[360px]">
+                      <div className="rounded-xl bg-violet-50 p-2.5 text-center text-[11px] text-violet-800">
+                        🔒 Private chat with <strong>{activeChat.otherUserName}</strong> for <strong>{activeChat.productTitle}</strong>.
                       </div>
 
                       {messages.map((msg) => {
@@ -1636,7 +1796,7 @@ export default function SeldolMarketplace() {
                       <input
                         value={chatText}
                         onChange={(e) => setChatText(e.target.value)}
-                        placeholder="Type realtime message to seller..."
+                        placeholder={`Message ${activeChat.otherUserName}...`}
                         className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs outline-none focus:border-violet-500 focus:bg-white"
                       />
                       <button
@@ -1650,8 +1810,9 @@ export default function SeldolMarketplace() {
                   </>
                 ) : (
                   <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-slate-400">
-                    <MessageCircle size={36} />
-                    <p className="mt-2 text-xs font-semibold">Select an item conversation from the left to start live chat.</p>
+                    <MessageCircle size={40} className="text-slate-300" />
+                    <p className="mt-2 text-xs font-semibold text-slate-600">No chat selected</p>
+                    <p className="mt-1 text-[11px] text-slate-400">Choose a conversation from the left to start messaging.</p>
                   </div>
                 )}
               </div>
